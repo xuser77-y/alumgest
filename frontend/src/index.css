@@ -199,3 +199,7 @@ h1, h2, h3, h4, h5, h6, .jakan-title {
 .jakan-blue-card div {
   color: #ffffff !important; /* Force everything inside to white */
 }
+body.loading button {
+  pointer-events: none;
+  opacity: 0.6;
+}
