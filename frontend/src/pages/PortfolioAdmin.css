@@ -459,5 +459,76 @@
 @media (max-width: 640px) {
   .pa-page .pa-kpi-strip { grid-template-columns: repeat(2,1fr); }
   .pa-page .pa-filters   { flex-direction: column; }
-  .pa-page .pa-search    { max-width: 100%; }
+  .pa-page .pa-search    { max-width: 100%; width: 100%; }
+  .pa-page .pa-sel       { width: 100%; }
+
+  /* ── table → card list on mobile ── */
+  .pa-page .pa-table-wrap { border-radius: 10px; overflow: visible; }
+
+  /* hide header row */
+  .pa-page .pa-table thead { display: none; }
+
+  /* each row becomes a card */
+  .pa-page .pa-table,
+  .pa-page .pa-table tbody,
+  .pa-page .pa-table tr,
+  .pa-page .pa-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .pa-page .pa-table tbody tr {
+    background: var(--bg3, var(--bs-tertiary-bg));
+    border: 1px solid var(--border, var(--bs-border-color));
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .pa-page .pa-table tbody tr:hover td { background: transparent; }
+
+  /* hide empty cells (location, year) if they show — */
+  .pa-page .pa-table td {
+    padding: 4px 0;
+    border-bottom: none;
+    font-size: 13px;
+  }
+
+  /* first cell = project thumb + name → stays as-is */
+  .pa-page .pa-table td:nth-child(1) { padding-bottom: 10px; border-bottom: 1px solid var(--border, var(--bs-border-color)); margin-bottom: 10px; }
+
+  /* category cell — show inline label */
+  .pa-page .pa-table td:nth-child(2)::before { content: 'Catégorie · '; font-size: 10px; color: var(--muted, var(--bs-secondary-color)); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* location */
+  .pa-page .pa-table td:nth-child(3)::before { content: 'Lieu · '; font-size: 10px; color: var(--muted, var(--bs-secondary-color)); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* year */
+  .pa-page .pa-table td:nth-child(4)::before { content: 'Année · '; font-size: 10px; color: var(--muted, var(--bs-secondary-color)); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* status + featured + actions — lay them out in a row at the bottom */
+  .pa-page .pa-table td:nth-child(5),
+  .pa-page .pa-table td:nth-child(6),
+  .pa-page .pa-table td:nth-child(7) {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 6px 4px 0;
+  }
+
+  /* actions cell — make edit+delete always visible */
+  .pa-page .pa-table td:nth-child(7) {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 0;
+  }
+  .pa-page .pa-actions {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  /* make the row top section a flex row: thumb+name on left, actions on right */
+  .pa-page .pa-proj-cell {
+    padding-right: 80px; /* space for the absolute-positioned action buttons */
+  }
 }
