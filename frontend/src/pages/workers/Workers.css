@@ -1,0 +1,104 @@
+.stats-card-jakan {
+    background: var(--jakan-arctic);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+[data-bs-theme='dark'] .stats-card-jakan {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.05);
+}
+
+.stats-card-jakan:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 97, 242, 0.1);
+}
+
+.jakan-table {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+[data-bs-theme='dark'] .jakan-table {
+    border-color: rgba(255,255,255,0.05);
+}
+
+.jakan-table thead {
+    background-color: #f1f5f9;
+}
+
+[data-bs-theme='dark'] .jakan-table thead {
+    background-color: #0f172a;
+}
+
+.jakan-table th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: #64748b;
+    padding: 1.25rem 1rem;
+}
+
+.worker-avatar-circle {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #0061f2 0%, #60a5fa 100%);
+    color: white;
+    font-weight: 700;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.btn-action-jakan {
+    padding: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.btn-action-jakan:hover {
+    border-color: var(--jakan-blue);
+    color: var(--jakan-blue);
+    background: rgba(0, 97, 242, 0.05);
+}
+
+.jakan-table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    background: var(--bg-card);
+}
+
+
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+
+
+.text-jakan-hover {
+    transition: color 0.2s ease;
+}
+
+.text-jakan-hover:hover {
+    color: var(--jakan-blue) !important;
+    text-decoration: underline;
+}
+
+/* Optional: Make the avatar scale up a little on hover */
+.worker-avatar-circle {
+    transition: transform 0.2s ease;
+}
+div[style*="cursor: pointer"]:hover .worker-avatar-circle {
+    transform: scale(1.08);
+}

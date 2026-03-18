@@ -1,0 +1,48 @@
+/* ── SUMMARY STRIP ── */
+.summary-strip-jakan {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.ss-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+    border-left: 4px solid var(--jakan-blue);
+}
+.ss-box.red { border-left-color: #ee3f58; }
+.ss-box.green { border-left-color: #16b870; }
+.ss-box.amber { border-left-color: #f0a81a; }
+.ss-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; }
+.ss-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--text-title); line-height: 1; margin: 4px 0; }
+
+/* ── FINANCE TOWER ── */
+.finance-tower {
+    position: sticky;
+    top: 20px;
+    background: var(--jakan-blue);
+    border-radius: 20px;
+    color: white !important;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 97, 242, 0.25);
+}
+.finance-tower * { color: white !important; }
+.finance-tower .bg-white-10 { background: rgba(255,255,255,0.1); }
+.finance-tower .profit-box { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); }
+
+/* ── TASK CARDS ── */
+.task-card-mini {
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+.task-card-mini:hover { border-color: var(--jakan-blue); transform: translateX(5px); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 991px) {
+    .summary-strip-jakan { grid-template-columns: repeat(2, 1fr); }
+    .finance-tower { position: relative; top: 0; margin-top: 2rem; }
+}

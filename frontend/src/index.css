@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --jakan-blue: #0061f2;
+  --jakan-gradient: linear-gradient(135deg, #0061f2 0%, #60a5fa 100%);
+  --jakan-steel: #94a3b8;
+}
+
+/* ⚪ LIGHT MODE COLORS */
+[data-bs-theme='light'] {
+  --bg-main: #f1f5f9;
+  --bg-card: #ffffff;
+  --text-title: #0f172a;
+  --text-body: #334155;
+  --border-color: #e2e8f0;
+}
+
+/* ⚫ DARK MODE COLORS */
+[data-bs-theme='dark'] {
+  --bg-main: #080c14;
+  --bg-card: #1e293b;
+  --text-title: #f8fafc;
+  --text-body: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.05);
+}
+
+body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-body) !important;
+  font-family: 'Barlow', sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* ── TYPOGRAPHY ── */
+.jakan-title {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1.5px;
+  color: var(--text-title);
+}
+
+.text-jakan { color: var(--jakan-blue); }
+
+/* ── CARDS & TABLES ── */
+.jakan-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  color: var(--text-body);
+}
+.jakan-blue-card {
+  background: var(--jakan-gradient) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px rgba(0, 97, 242, 0.2);
+}
+
+.jakan-table-container {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.table thead th {
+  background-color: var(--bg-table-header) !important;
+  color: var(--jakan-steel) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 1.25rem 1rem !important;
+  border: none !important;
+}
+
+.table td {
+  padding: 1rem !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-body) !important;
+  background: transparent !important;
+}
+
+/* ── LUXURY BUTTONS ── */
+.btn-status {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s ease;
+  border: 1.5px solid transparent !important;
+}
+
+.btn-status-outline {
+  border: 1.5px solid var(--border-color) !important;
+  color: var(--text-body) !important;
+  background: transparent !important;
+}
+
+.btn-status-outline:hover {
+  border-color: var(--jakan-blue) !important;
+  color: var(--jakan-blue) !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--jakan-blue); border-radius: 10px; opacity: 0.5; }
+
+/* ── RESPONSIVE SIDEBAR LOGIC ── */
+.sidebar-wrapper {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1050;
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(-100%); /* Hidden on mobile */
+}
+
+.sidebar-wrapper.show {
+  transform: translateX(0); /* Shown on mobile toggle */
+}
+
+@media (min-width: 992px) {
+  .sidebar-wrapper {
+    position: relative;
+    transform: translateX(0); /* Always shown on desktop */
+  }
+}
+
+/* ── TABLE RESPONSIVENESS ── */
+.jakan-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On very small screens, make the daily salary cards smaller */
+@media (max-width: 576px) {
+    .btn-status {
+        padding: 6px 10px !important;
+        font-size: 0.75rem !important;
+    }
+    .jakan-title {
+        font-size: 1.5rem !important;
+    }
+}
+
+
+
+/* Add/Update these in index.css */
+[data-bs-theme='dark'] .jakan-card {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme='dark'] .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* Calendar Number Visibility */
+.cal-day-box {
+    color: var(--text-title) !important;
+    font-weight: 700;
+}
+.day-box {
+  width: 58px; 
+  height: 65px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-color);
+  font-weight: 700;
+  background-color: var(--bg-card);
+  color: var(--text-title);
+}
+
+.day-box.empty {
+  opacity: 0.3;
+  background-color: transparent;
+}
+
+[data-bs-theme='dark'] .cal-day-box.text-muted {
+    color: rgba(255,255,255,0.2) !important;
+}
+
+/* Force headings color */
+h1, h2, h3, h4, h5, h6, .jakan-title {
+  color: var(--text-title) !important;
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+.jakan-blue-card h1, 
+.jakan-blue-card h2, 
+.jakan-blue-card h3, 
+.jakan-blue-card h4, 
+.jakan-blue-card h5, 
+.jakan-blue-card h6, 
+.jakan-blue-card span, 
+.jakan-blue-card div {
+  color: #ffffff !important; /* Force everything inside to white */
+}

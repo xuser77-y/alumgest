@@ -1,0 +1,55 @@
+.dossier-header {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.dossier-header::after {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0, 97, 242, 0.1) 0%, transparent 70%);
+}
+
+.avatar-big {
+    width: 100px; height: 100px;
+    background: var(--jakan-gradient);
+    color: white;
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; font-family: 'Bebas Neue';
+    box-shadow: 0 10px 25px rgba(0, 97, 242, 0.3);
+}
+
+.score-badge {
+    padding: 1rem;
+    border-radius: 15px;
+    text-align: center;
+    min-width: 120px;
+    border: 2px solid;
+}
+
+.kpi-mini-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.kpi-mini-card:hover { transform: translateY(-5px); border-color: var(--jakan-blue); }
+
+.task-row:hover { background: rgba(0, 97, 242, 0.03) !important; }
+
+/* ── CHARTS ── */
+.chart-container {
+    height: 250px;
+    width: 100%;
+}

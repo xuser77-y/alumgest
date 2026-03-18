@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap');
+
+.jakan-sidebar {
+    width: 280px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-card) !important;
+    transition: all 0.3s ease;
+    position: sticky;
+    top: 0;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-badge {
+    width: 35px;
+    height: 35px;
+    background: var(--jakan-gradient);
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue';
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.jakan-logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}
+
+/* ── NAV LINKS ── */
+.nav-link-jakan {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: var(--text-body) !important;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.nav-link-jakan:hover, .nav-link-jakan.active {
+    background-color: var(--jakan-blue) !important;
+    color: white !important;
+}
+
+/* ── ACCORDION ── */
+.sidebar-accordion .accordion-item {
+    background: transparent !important;
+    border: none !important;
+}
+
+.sidebar-accordion .accordion-button {
+    background: transparent !important;
+    color: var(--text-body) !important;
+    padding: 12px 16px !important;
+    font-weight: 500 !important;  
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+.sidebar-accordion .accordion-button::after {
+    filter: brightness(0.5); /* Makes arrow visible in light mode */
+}
+
+[data-bs-theme='dark'] .sidebar-accordion .accordion-button::after {
+    filter: invert(1); /* White arrow in dark mode */
+}
+
+.sidebar-accordion .accordion-button:not(.collapsed) {
+    color: var(--jakan-blue) !important;
+}
+
+.sub-link-jakan {
+    display: block;
+    padding: 8px 0;
+    color: var(--text-body) !important;
+    opacity: 0.7;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.sub-link-jakan:hover, .sub-link-jakan.active {
+    color: var(--jakan-blue) !important;
+    opacity: 1;
+    font-weight: 700;
+}

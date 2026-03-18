@@ -1,0 +1,104 @@
+/* ── CALENDAR GRID ── */
+.jakan-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+}
+
+.day-card {
+    height: 70px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1.5px solid var(--border-color);
+    background-color: var(--bg-card);
+}
+
+.day-card .day-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 2px;
+}
+
+.day-card .day-number {
+    font-size: 1.2rem;
+    font-weight: 800;
+    font-family: 'Bebas Neue', sans-serif;
+}
+
+/* ── STATUS COLORS ── */
+.day-card.full { background-color: #22c55e !important; color: white !important; border: none; }
+.day-card.half { background-color: #eab308 !important; color: #1e293b !important; border: none; }
+.day-card.absent { opacity: 0.4; }
+
+/* ── FINANCIAL SUMMARY CARD ── */
+.summary-card-pro {
+    background: var(--jakan-gradient) !important;
+    border-radius: 20px !important;
+    padding: 2rem;
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 97, 242, 0.3);
+}
+
+.summary-card-pro::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.summary-card-pro .stat-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.summary-card-pro .net-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-top: 0.5rem;
+}
+
+/* ── BUTTONS ── */
+.btn-jakan-light {
+    background: white !important;
+    color: var(--jakan-blue) !important;
+    border: none !important;
+    font-weight: 800 !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-jakan-light:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.btn-jakan-pdf {
+    background: #e11d48 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 8px 20px !important;
+    font-weight: 700 !important;
+}
+
+/* ── THEME ADAPTATION ── */
+[data-bs-theme='dark'] .day-card .day-number { color: white; }
+[data-bs-theme='light'] .day-card .day-number { color: #1e293b; }
+.day-card.full .day-number, .day-card.half .day-number { color: inherit !important; }

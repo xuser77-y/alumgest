@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap');
+
+:root {
+  --jakan-blue: #0061f2;
+  --jakan-blue-dark: #002d72;
+  --jakan-silver: #e2e8f0;
+  --jakan-arctic: #f8fafc;
+  --jakan-glass: rgba(255, 255, 255, 0.1);
+}
+.jakan-field:-webkit-autofill,
+.jakan-field:-webkit-autofill:hover, 
+.jakan-field:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1e293b !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.login-split-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Barlow', sans-serif;
+  background-color: var(--jakan-arctic);
+}
+
+/* RTL Support */
+.login-split-container.rtl {
+  flex-direction: row-reverse;
+}
+
+/* ── BRAND SIDE (LEFT) ── */
+.login-brand-side {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(135deg, var(--jakan-blue) 0%, var(--jakan-blue-dark) 100%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (min-width: 992px) {
+  .login-brand-side { display: flex; }
+}
+
+.brand-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: #fff;
+  padding: 3rem;
+}
+
+.logo-img {
+  width: 220px;
+  height: auto;
+  margin-bottom: 2rem;
+  filter: drop-shadow(0 0 20px rgba(0,0,0,0.2));
+}
+
+.brand-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.brand-subtitle {
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 3rem;
+}
+
+.industrial-line {
+  width: 80px;
+  height: 4px;
+  background: #fff;
+  margin: 0 auto;
+  border-radius: 2px;
+}
+
+/* ── FORM SIDE (RIGHT) ── */
+.login-form-side {
+  width: 100%;
+  max-width: 500px;
+  background: var(--jakan-arctic);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border-left: 1px solid rgba(0,0,0,0.05);
+}
+
+.login-form-wrapper {
+  width: 100%;
+  max-width: 380px;
+}
+
+.form-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  color: var(--jakan-blue-dark);
+  margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+  color: #64748b;
+  font-weight: 400;
+  margin-bottom: 2.5rem;
+}
+
+.jakan-input-group {
+  margin-bottom: 1.5rem;
+}
+
+.jakan-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569 !important;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.jakan-input-wrap {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff !important; 
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.jakan-input-wrap:focus-within {
+  border-color: var(--jakan-blue);
+  box-shadow: 0 0 0 4px rgba(10, 182, 110, 0.1);
+}
+
+.jakan-icon {
+  padding: 0 1rem;
+  color: #64748b !important; /* Slate Gray */
+}
+
+.jakan-field {
+  flex: 1;
+  border: none !important;
+  padding: 0.9rem 0;
+  outline: none !important;
+  font-size: 1rem;
+  color: #1e293b !important; /* Dark Text */
+  background-color: transparent !important; /* Transparent so it shows the wrapper's white */
+}
+
+/* ── BUTTON ── */
+.btn-jakan {
+  width: 100%;
+  padding: 1rem;
+  background: var(--jakan-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 10px 20px rgba(0, 97, 242, 0.2);
+}
+
+.btn-jakan:hover {
+  background: var(--jakan-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 25px rgba(0, 97, 242, 0.3);
+}
+
+.btn-jakan:active { transform: translateY(0); }
+
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

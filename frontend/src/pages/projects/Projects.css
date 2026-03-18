@@ -1,0 +1,33 @@
+/* ── SUMMARY BOXES ── */
+.summary-box-jakan {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-box-jakan::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+}
+
+.summary-box-jakan.blue::after { background: var(--jakan-blue); }
+.summary-box-jakan.green::after { background: #16b870; }
+.summary-box-jakan.red::after { background: #ee3f58; }
+.summary-box-jakan.amber::after { background: #f0a81a; }
+
+.summary-box-jakan .label { font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; opacity: 0.6; margin-bottom: 5px; }
+.summary-box-jakan .value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; line-height: 1; margin-bottom: 5px; color: var(--text-title); }
+.summary-box-jakan .sub { font-size: 0.75rem; opacity: 0.8; }
+
+.x-small { font-size: 0.7rem; letter-spacing: 0.5px; }
+
+.result-item-jakan:hover {
+    background-color: var(--jakan-blue);
+    color: white !important;
+}
+
+.result-item-jakan:hover .text-muted {
+    color: rgba(255,255,255,0.7) !important;
+}

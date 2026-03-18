@@ -1,0 +1,220 @@
+/* ── FINANCE STAT CARDS ── */
+.finance-stat-card {
+    border-radius: 20px;
+    padding: 1.5rem;
+    color: #ffffff !important; /* Force white text for readability on colors */
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    transition: transform 0.3s ease;
+    border: none;
+}
+
+.finance-stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.finance-stat-card.balance {
+    background: var(--jakan-gradient);
+    box-shadow: 0 10px 25px rgba(0, 97, 242, 0.3);
+}
+
+.finance-stat-card.income {
+    background: linear-gradient(135deg, #16b870 0%, #22c55e 100%);
+    box-shadow: 0 10px 25px rgba(22, 184, 112, 0.2);
+}
+
+.finance-stat-card.expense {
+    background: linear-gradient(135deg, #ee3f58 0%, #ef4444 100%);
+    box-shadow: 0 10px 25px rgba(238, 63, 88, 0.2);
+}
+
+.finance-stat-card .value {
+    font-family: 'Bebas Neue', sans-serif;
+}
+
+/* ── TRANSACTION ROWS ── */
+.transaction-row {
+    transition: all 0.2s;
+}
+
+.transaction-row:hover {
+    background-color: rgba(0, 97, 242, 0.05) !important;
+}
+
+/* ── CATEGORY TAGS ── */
+.category-tag {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(0, 97, 242, 0.08);
+    color: var(--jakan-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(0, 97, 242, 0.15);
+}
+
+/* ── RESPONSIVE TABLE ── */
+.jakan-table {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.jakan-table thead {
+    background-color: var(--bg-table-header) !important;
+}
+
+/* ── CATEGORY LIST SCROLLBAR ── */
+.category-list-scrollable::-webkit-scrollbar {
+    width: 4px;
+}
+
+.category-list-scrollable::-webkit-scrollbar-thumb {
+    background: var(--jakan-blue);
+    border-radius: 10px;
+}
+
+/* ── RESPONSIVE BREAKPOINTS ── */
+@media (max-width: 768px) {
+    .finance-stat-card {
+        padding: 1.25rem;
+    }
+    
+    .finance-stat-card .fs-1 {
+        font-size: 2rem !important;
+    }
+
+    /* Hide less important columns on small mobile */
+    .hide-on-mobile {
+        display: none;
+    }
+    
+    .jakan-title {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* ── LIGHT/DARK ADAPTATION ── */
+[data-bs-theme='light'] .category-list-scrollable div {
+    border-bottom-color: #f1f5f9 !important;
+}
+
+[data-bs-theme='dark'] .category-list-scrollable div {
+    border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Force Modal background colors for Jakan look */
+.modal-content {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 20px !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* Force dark text for visibility inside light-background inputs in dark mode */
+.text-dark {
+    color: #1e293b !important;
+}
+
+.filter-select {
+    width: 180px;
+    background-color: var(--bg-card) !important;
+    color: var(--text-title) !important;
+    border: 1px solid var(--border-color) !important;
+    font-weight: 600;
+}
+
+/* Pagination buttons hover */
+.pagination-btn:hover {
+    background-color: var(--jakan-blue) !important;
+    color: white !important;
+}
+
+/* Fix modal inputs in dark mode */
+[data-bs-theme="dark"] .modal input,
+[data-bs-theme="dark"] .modal select,
+[data-bs-theme="dark"] .modal textarea {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
+
+[data-bs-theme="dark"] .modal input::placeholder,
+[data-bs-theme="dark"] .modal textarea::placeholder {
+    color: rgba(255,255,255,0.5) !important;
+}
+
+
+/* Fix VOS CATÉGORIES ACTIVES text in dark mode */
+[data-bs-theme="dark"] .text-dark {
+  color: #e2e8f0 !important;
+}
+
+
+
+
+
+
+
+
+
+
+.finance-stat-card {
+    border-radius: 20px;
+    padding: 1.5rem;
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    border: none;
+}
+.finance-stat-card:hover { transform: translateY(-5px); }
+.finance-stat-card.balance { background: var(--jakan-gradient); box-shadow: 0 10px 30px rgba(0, 97, 242, 0.3); }
+.finance-stat-card.income { background: linear-gradient(135deg, #16b870 0%, #22c55e 100%); }
+.finance-stat-card.expense { background: linear-gradient(135deg, #ee3f58 0%, #ef4444 100%); }
+
+.filter-pill {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-title);
+    outline: none;
+    transition: all 0.2s;
+}
+.filter-pill:focus { border-color: var(--jakan-blue); box-shadow: 0 0 0 3px rgba(0, 97, 242, 0.1); }
+
+.trans-icon-box {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.pagination-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-title);
+    transition: all 0.2s;
+}
+.pagination-btn:hover:not(:disabled) { background: var(--jakan-blue); color: white; border-color: var(--jakan-blue); }
+
+[data-bs-theme='dark'] .modal-content { background-color: #1e293b !important; color: white !important; }
+[data-bs-theme='dark'] .form-control, [data-bs-theme='dark'] .form-select {
+    background-color: #0f172a !important;
+    color: white !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
