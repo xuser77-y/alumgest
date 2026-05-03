@@ -1,0 +1,59 @@
+.client-debt-card {
+    transition: all 0.3s ease;
+    border-radius: 20px !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-body) !important;
+}
+
+[data-bs-theme='light'] .client-debt-card {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-bs-theme='dark'] .client-debt-card {
+    background-color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.client-debt-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+}
+
+.client-debt-card .card-title, 
+.client-debt-card h5 {
+    color: var(--text-title) !important;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.btn-jakan-light {
+    background: rgba(0, 97, 242, 0.1) !important;
+    color: var(--jakan-blue) !important;
+    border: none !important;
+    border-radius: 10px !important;
+}
+
+.btn-jakan-light:hover {
+    background: var(--jakan-blue) !important;
+    color: white !important;
+}
+
+.search-wrapper {
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.shadow-inner {
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}

@@ -7,15 +7,15 @@ import '../workers/WorkerPayrollDetails.css'; // Reusing your high-end CSS
 const WorkerDashboard = () => {
   const [data, setData] = useState(null);
   const [years, setYears] = useState([]);
-  
+
   // ── DATE STATES ──
   const [selMonth, setSelMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selYear, setSelYear] = useState(new Date().getFullYear().toString());
 
   const months = [
-    {v:'01', l:'Jan'}, {v:'02', l:'Fév'}, {v:'03', l:'Mar'}, {v:'04', l:'Avr'},
-    {v:'05', l:'Mai'}, {v:'06', l:'Jun'}, {v:'07', l:'Jul'}, {v:'08', l:'Aoû'},
-    {v:'09', l:'Sep'}, {v:'10', l:'Oct'}, {v:'11', l:'Nov'}, {v:'12', l:'Déc'}
+    { v: '01', l: 'Jan' }, { v: '02', l: 'Fév' }, { v: '03', l: 'Mar' }, { v: '04', l: 'Avr' },
+    { v: '05', l: 'Mai' }, { v: '06', l: 'Jun' }, { v: '07', l: 'Jul' }, { v: '08', l: 'Aoû' },
+    { v: '09', l: 'Sep' }, { v: '10', l: 'Oct' }, { v: '11', l: 'Nov' }, { v: '12', l: 'Déc' }
   ];
 
   const loadAll = async () => {
@@ -31,10 +31,10 @@ const WorkerDashboard = () => {
 
   useEffect(() => { loadAll(); }, [selMonth, selYear]);
 
-  // ── 10th to 10th Range logic ──
+  // ── Calendar Month Range logic ──
   const getRange = () => {
-    const start = new Date(Number(selYear), Number(selMonth) - 2, 11);
-    const end = new Date(Number(selYear), Number(selMonth) - 1, 10);
+    const start = new Date(Date.UTC(Number(selYear), Number(selMonth) - 1, 1));
+    const end = new Date(Date.UTC(Number(selYear), Number(selMonth), 0));
     const arr = [];
     let dt = new Date(start);
     while (dt <= end) {
@@ -52,83 +52,111 @@ const WorkerDashboard = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="jakan-title mb-1 text-title">MON <span className="text-jakan">DOSSIER</span></h2>
-          <p className="text-muted small m-0">Cycle de paie du 11 au 10.</p>
+          <p className="text-muted small m-0">Cycle de paie mensuel.</p>
         </div>
         <div className="d-flex align-items-center gap-2 bg-body p-2 rounded-3 border shadow-sm">
-            <CalIcon size={18} className="text-jakan ms-1" />
-            <Form.Select 
-                value={selYear} 
-                onChange={(e) => setSelYear(e.target.value)}
-                className="border-0 bg-transparent fw-bold p-0 pe-4"
-                style={{ width: 'auto' }}
-            >
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </Form.Select>
+          <CalIcon size={18} className="text-jakan ms-1" />
+          <Form.Select
+            value={selYear}
+            onChange={(e) => setSelYear(e.target.value)}
+            className="border-0 bg-transparent fw-bold p-0 pe-4"
+            style={{ width: 'auto' }}
+          >
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </Form.Select>
         </div>
       </div>
 
       {/* ── MONTH PILLS ── */}
       <div className="month-pills-container d-flex gap-1 bg-body p-1 rounded-3 border shadow-sm mb-4 overflow-auto flex-nowrap">
-          {months.map((m) => (
-            <button 
-                key={m.v} 
-                className={`btn btn-sm fw-bold border-0 px-3 flex-grow-1 ${selMonth === m.v ? 'btn-primary shadow' : 'text-muted'}`}
-                onClick={() => setSelMonth(m.v)}
-            >
-                {m.l}
-            </button>
-          ))}
+        {months.map((m) => (
+          <button
+            key={m.v}
+            className={`btn btn-sm fw-bold border-0 px-3 flex-grow-1 ${selMonth === m.v ? 'btn-primary shadow' : 'text-muted'}`}
+            onClick={() => setSelMonth(m.v)}
+          >
+            {m.l}
+          </button>
+        ))}
       </div>
 
       {/* ── KPI ROW ── */}
       <Row className="g-4 mb-4">
-        <Col xs={12} md={6}>
-            <Card className="summary-card-pro border-0 p-4 shadow-lg h-100">
-                <div className="d-flex justify-content-between text-white">
-                    <h6 className="opacity-75 small fw-bold uppercase text-white">
-                        {data.isPaid ? "ACOMPTES DÉDUITS" : "ACOMPTES À DÉDUIRE"}
-                    </h6>
-                    <Wallet size={24} className="text-white" />
-                </div>
-                
-                <h1 className="fw-bold m-0 mt-2 text-white" style={{fontSize: '3rem'}}>
-                    {data.totalAdvances} <small className="fs-6">DH</small>
-                </h1>
+        {/* SALARY CARD */}
+        <Col xs={12} lg={4}>
+          <Card className="summary-card-pro border-0 p-4 shadow-lg h-100" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+            <div className="d-flex justify-content-between text-white">
+              <h6 className="opacity-75 small fw-bold uppercase text-white">SALAIRE NET (ESTIMÉ)</h6>
+              <Wallet size={24} className="text-white" />
+            </div>
 
-                {/* ── FIXED DYNAMIC PÉRIODE LABEL ── */}
-                <div className="mt-3 p-2 bg-white bg-opacity-10 rounded border border-white border-opacity-10 small text-white text-center fw-bold">
-                  Période du 11/{data.period?.start.m}/{data.period?.start.y} au 10/{data.period?.end.m}/{data.period?.end.y}
-                </div>
-                
-                {data.isPaid && (
-                  <Badge bg="white" className="text-success mt-2 py-2 shadow-sm">
-                      <CheckCircle size={12} className="me-1"/> MOIS DÉJÀ RÉGLÉ
-                  </Badge>
-                )}
-            </Card>
+            <h1 className="fw-bold m-0 mt-2 text-white" style={{ fontSize: '2.5rem' }}>
+              {data.net} <small className="fs-6">DH</small>
+            </h1>
+
+            <div className="mt-3 p-2 bg-white bg-opacity-10 rounded border border-white border-opacity-10 small text-white text-center fw-bold">
+              Salaire Brut: {data.brut} DH
+            </div>
+          </Card>
         </Col>
 
-        <Col xs={12} md={6}>
-            <Card className="jakan-card border-0 shadow-sm p-4 h-100 bg-body">
-                <div className="d-flex justify-content-between">
-                    <h6 className="text-muted small fw-bold uppercase">Présences validées</h6>
-                    <CheckCircle size={24} className="text-success" />
-                </div>
-                <h1 className="fw-bold m-0 mt-2 text-title">
-                    {data.attendance.filter(a => a.status === 'full').length} Jours
-                </h1>
-                
-                {/* Calcul du score basé sur les jours pleins sur 26 jours max environ */}
-                <ProgressBar 
-                    now={(data.attendance.filter(a => a.status === 'full').length / 26) * 100} 
-                    variant="success" 
-                    style={{height:8}} 
-                    className="mt-4 rounded-pill shadow-inner" 
-                />
-                <small className="text-muted mt-2 d-block">
-                    Assiduité sur ce cycle
-                </small>
-            </Card>
+        <Col xs={12} lg={4}>
+          <Card className="summary-card-pro border-0 p-4 shadow-lg h-100">
+            <div className="d-flex justify-content-between text-white">
+              <h6 className="opacity-75 small fw-bold uppercase text-white">
+                {data.isPaid ? "ACOMPTES DÉDUITS" : "ACOMPTES À DÉDUIRE"}
+              </h6>
+              <Wallet size={24} className="text-white" />
+            </div>
+
+            <h1 className="fw-bold m-0 mt-2 text-white" style={{ fontSize: '2.5rem' }}>
+              - {data.totalAdvances} <small className="fs-6">DH</small>
+            </h1>
+
+            {/* ── FIXED DYNAMIC PÉRIODE LABEL ── */}
+            <div className="mt-3 p-2 bg-white bg-opacity-10 rounded border border-white border-opacity-10 small text-white text-center fw-bold">
+              Période du 01/{data.period?.start.m}/{data.period?.start.y} au {new Date(data.period?.end.y, data.period?.end.m, 0).getDate()}/{data.period?.end.m}/{data.period?.end.y}
+            </div>
+
+            {data.isPaid && (
+              <Badge bg="white" className="text-success mt-2 py-2 shadow-sm">
+                <CheckCircle size={12} className="me-1" /> MOIS DÉJÀ RÉGLÉ
+              </Badge>
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={12} lg={4}>
+          <Card className="jakan-card border-0 shadow-sm p-4 h-100 bg-body d-flex flex-column">
+            <div className="d-flex justify-content-between mb-3">
+              <h6 className="text-muted small fw-bold uppercase">Présences validées</h6>
+              <CheckCircle size={24} className="text-success" />
+            </div>
+
+            <div className="d-flex justify-content-between align-items-center mt-auto mb-2">
+              <span className="fw-bold text-muted">Jours complets</span>
+              <Badge bg="success" className="px-3 py-2 fs-6 shadow-sm">{data.attendance.filter(a => a.status === 'full').length}</Badge>
+            </div>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span className="fw-bold text-muted">Demi-journées</span>
+              <Badge bg="warning" text="dark" className="px-3 py-2 fs-6 shadow-sm">{data.attendance.filter(a => a.status === 'half').length}</Badge>
+            </div>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <span className="fw-bold text-muted">Déplacements</span>
+              <Badge bg="info" text="dark" className="px-3 py-2 fs-6 shadow-sm">{data.attendance.filter(a => a.displacement).length}</Badge>
+            </div>
+
+            {/* Calcul du score basé sur les jours pleins + demi (0.5) sur 26 jours max environ */}
+            <ProgressBar
+              now={((data.attendance.filter(a => a.status === 'full').length + data.attendance.filter(a => a.status === 'half').length * 0.5) / 26) * 100}
+              variant="success"
+              style={{ height: 8 }}
+              className="rounded-pill shadow-inner mt-auto"
+            />
+            <small className="text-muted mt-2 d-block text-center">
+              Assiduité globale sur ce cycle
+            </small>
+          </Card>
         </Col>
       </Row>
 
@@ -140,22 +168,65 @@ const WorkerDashboard = () => {
             const record = data.attendance.find(d => d.date === dateStr);
             const dayLabel = dateStr.split('-')[2];
             return (
-              <div key={i} className={`day-card ${!record ? 'absent' : ''} ${record?.status}`}>
+              <div key={i} className={`day-card ${!record ? 'missing' : record.status}`}>
                 <span className="day-label">JOUR</span>
                 <span className="day-number">{dayLabel}</span>
-                {record?.displacement && <div className="bg-info rounded-circle mt-1 shadow-sm" style={{width:8,height:8}}/>}
+                {record?.displacement && <div className="bg-info rounded-circle mt-1 shadow-sm" style={{ width: 8, height: 8 }} />}
               </div>
             );
           })}
         </div>
-        
+
         {/* LEGEND */}
         <div className="mt-4 d-flex gap-3 flex-wrap border-top pt-3 justify-content-center">
-             <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-success rounded-circle" style={{width:10,height:10}}/> Présent</div>
-             <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-warning rounded-circle" style={{width:10,height:10}}/> Demi-jour</div>
-             <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-danger rounded-circle" style={{width:10,height:10}}/> Absent</div>
-             <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-info rounded-circle" style={{width:10,height:10}}/> Chantier Site</div>
+          <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-success rounded-circle" style={{ width: 10, height: 10 }} /> Présent</div>
+          <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-warning rounded-circle" style={{ width: 10, height: 10 }} /> Demi-jour</div>
+          <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-danger rounded-circle" style={{ width: 10, height: 10 }} /> Absent</div>
+          <div className="small fw-bold d-flex align-items-center gap-1 text-title"><div className="bg-info rounded-circle" style={{ width: 10, height: 10 }} /> Chantier Site</div>
         </div>
+      </Card>
+
+      {/* ── ADVANCES LIST ── */}
+      <Card className="jakan-card border-0 shadow-sm p-4 bg-body">
+        <h5 className="fw-bold mb-4 jakan-title small uppercase opacity-75 text-title">Mes Dernières Avances</h5>
+        {data.advancesList && data.advancesList.length > 0 ? (
+          <div className="table-responsive">
+            <table className="table table-borderless table-hover align-middle mb-0">
+              <thead className="border-bottom">
+                <tr>
+                  <th className="text-muted small uppercase pb-3">Date</th>
+                  <th className="text-muted small uppercase pb-3">Montant</th>
+                  <th className="text-muted small uppercase pb-3">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.advancesList.map(adv => (
+                  <tr key={adv._id} className="border-bottom">
+                    <td className="py-3">
+                      <div className="fw-bold text-title">{new Date(adv.date).toLocaleDateString('fr-FR')}</div>
+                    </td>
+                    <td className="py-3">
+                      <Badge bg="light" text="dark" className="border shadow-sm px-3 py-2 fs-6">
+                        {adv.amount} DH
+                      </Badge>
+                    </td>
+                    <td className="py-3">
+                      {adv.isSettled ? (
+                        <Badge bg="success" className="px-2 py-1"><CheckCircle size={12} className="me-1" /> Réglé</Badge>
+                      ) : (
+                        <Badge bg="warning" text="dark" className="px-2 py-1"><Clock size={12} className="me-1" /> En attente</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center p-4 text-muted border rounded bg-light">
+            Aucune avance enregistrée récemment.
+          </div>
+        )}
       </Card>
     </Container>
   );

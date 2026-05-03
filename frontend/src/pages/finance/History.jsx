@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Badge, Form, Button } from 'react-bootstrap';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Filter, ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react';
+import { Container, Row, Col, Card, Table, Badge, Modal, Form, Button, Toast, ToastContainer } from 'react-bootstrap';
+import { Wallet, ArrowUpRight, ArrowDownLeft, Filter, ChevronLeft, ChevronRight, FileText, Search, Edit3, Trash2, CheckCircle, XCircle, Lock, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { amiriFont } from '../../utils/amiriFont';
 import './Finance.css';
 
 const History = () => {
@@ -14,6 +15,14 @@ const History = () => {
   const itemsPerPage = 10;
 
   const [filters, setFilters] = useState({ type: '', category: '', year: 'all', month: 'all' , search: '' });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  const [editForm, setEditForm] = useState({ date: '', category: '', description: '', amount: '' });
+  const [toast, setToast] = useState({ show: false, message: '', variant: 'success' });
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const loadData = async () => {
     try {
@@ -30,6 +39,53 @@ const History = () => {
     } catch (err) { console.error(err); }
   };
 
+  const handleEditClick = (t) => {
+    setSelectedTransaction(t);
+    setEditForm({
+      date: new Date(t.date).toISOString().split('T')[0],
+      category: t.category,
+      description: t.description,
+      amount: t.amount
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/transactions/${selectedTransaction._id}`, editForm);
+      setShowEditModal(false);
+      loadData();
+      setToast({ show: true, message: 'Transaction mise à jour !', variant: 'success' });
+    } catch (err) {
+      setToast({ show: true, message: 'Erreur lors de la mise à jour', variant: 'danger' });
+    }
+  };
+
+  const handleDeleteClick = (t) => {
+    setSelectedTransaction(t);
+    setDeletePassword('');
+    setDeleteError('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async (e) => {
+    if (e) e.preventDefault();
+    setDeleteError('');
+    try {
+      await api.delete(`/transactions/${selectedTransaction._id}`, {
+        data: { password: deletePassword }
+      });
+      setShowDeleteModal(false);
+      loadData();
+      setToast({ show: true, message: 'Transaction supprimée !', variant: 'success' });
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erreur lors de la suppression';
+      setDeleteError(msg);
+      setToast({ show: true, message: msg, variant: 'danger' });
+    }
+  };
+
   useEffect(() => { loadData(); }, [filters]);
 
   // ── PAGINATION LOGIC ──
@@ -43,6 +99,8 @@ const History = () => {
   // ── PDF GENERATOR ──
   const generatePDF = () => {
     const doc = new jsPDF();
+    doc.addFileToVFS('amiri.ttf', amiriFont);
+    doc.addFont('amiri.ttf', 'amiri', 'normal');
     const logoUrl = "/logo.jpg";
 
     /* ───── HEADER ───── */
@@ -51,11 +109,11 @@ const History = () => {
       doc.addImage(logoUrl, "JPG", 14, 10, 25, 25);
     } catch (e) {}
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont("amiri", "normal");
     doc.setFontSize(18);
     doc.text("GIL JAKAN", 45, 18);
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont("amiri", "normal");
     doc.setFontSize(10);
     doc.text("ALUMINIUM & MENUISERIE", 45, 24);
 
@@ -64,11 +122,11 @@ const History = () => {
 
     /* ───── REPORT TITLE ───── */
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont("amiri", "normal");
     doc.setFontSize(14);
     doc.text("Rapport d'historique financier", 14, 45);
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont("amiri", "normal");
     doc.setFontSize(10);
     doc.text(
       `Période : ${filters.month}/${filters.year}`,
@@ -91,9 +149,11 @@ const History = () => {
       headStyles: {
         fillColor: [240, 240, 240],
         textColor: 0,
+        font: "amiri"
       },
       styles: {
         fontSize: 9,
+        font: "amiri"
       },
     });
 
@@ -101,11 +161,11 @@ const History = () => {
 
     const finalY = doc.lastAutoTable.finalY + 15;
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont("amiri", "normal");
     doc.setFontSize(12);
     doc.text("Résumé financier", 140, finalY);
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont("amiri", "normal");
 
     doc.text("Total entrées :", 120, finalY + 10);
     doc.text(`${totalIn.toLocaleString()} DH`, 190, finalY + 10, {
@@ -117,7 +177,7 @@ const History = () => {
       align: "right",
     });
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont("amiri", "normal");
     doc.text("Solde total :", 120, finalY + 28);
     doc.text(`${(totalIn - totalOut).toLocaleString()} DH`, 190, finalY + 28, {
       align: "right",
@@ -129,7 +189,7 @@ const History = () => {
     doc.line(14, 285, 196, 285);
 
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("amiri", "normal");
     doc.text(
       "Document généré par le système de gestion GIL JAKAN",
       105,
@@ -210,7 +270,8 @@ const History = () => {
               <th>Catégorie</th>
               <th>Désignation</th>
               <th className="text-center">Montant</th>
-              <th className="text-end pe-4">Flux</th>
+              <th className="text-center">Flux</th>
+              <th className="text-end pe-4">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -224,8 +285,14 @@ const History = () => {
                 <td className={`text-center fw-bold fs-5 ${t.type === 'plus' ? 'text-success' : 'text-danger'}`}>
                     {t.type === 'plus' ? '+' : '−'}{t.amount.toLocaleString()} DH
                 </td>
-                <td className="text-end pe-4">
+                <td className="text-center">
                     {t.type === 'plus' ? <ArrowUpRight className="text-success" /> : <ArrowDownLeft className="text-danger" />}
+                </td>
+                <td className="text-end pe-4">
+                    <div className="d-flex justify-content-end gap-1">
+                        <Button variant="link" className="text-primary p-0" onClick={() => handleEditClick(t)}><Edit3 size={18}/></Button>
+                        <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteClick(t)}><Trash2 size={18}/></Button>
+                    </div>
                 </td>
               </tr>
             ))}
@@ -241,6 +308,89 @@ const History = () => {
             </div>
         </div>
       </div>
+      {/* EDIT MODAL */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="sm">
+        <Modal.Header closeButton className="border-0"><Modal.Title className="fw-bold fs-5">Modifier Transaction</Modal.Title></Modal.Header>
+        <Form onSubmit={handleUpdate}>
+          <Modal.Body className="pt-0">
+            <Form.Group className="mb-2">
+                <Form.Label className="x-small fw-bold text-muted">DATE</Form.Label>
+                <Form.Control type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-2">
+                <Form.Label className="x-small fw-bold text-muted">CATÉGORIE</Form.Label>
+                <Form.Control value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-2">
+                <Form.Label className="x-small fw-bold text-muted">DÉSIGNATION</Form.Label>
+                <Form.Control value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label className="x-small fw-bold text-muted">MONTANT (DH)</Form.Label>
+                <Form.Control type="number" value={editForm.amount} onChange={e => setEditForm({...editForm, amount: e.target.value})} />
+            </Form.Group>
+            <Button variant="primary" type="submit" className="w-100 fw-bold shadow">ENREGISTRER</Button>
+          </Modal.Body>
+        </Form>
+      </Modal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+        <Form onSubmit={confirmDelete}>
+          <Modal.Body className="p-4 text-center">
+              <AlertTriangle size={40} className="text-danger mb-3" />
+              <h5 className="fw-bold">Supprimer cette transaction ?</h5>
+              <p className="small text-muted mb-2">Cette action nécessite votre mot de passe administrateur.</p>
+              
+              {deleteError && (
+                  <div className="alert alert-danger py-2 small fw-bold mb-3">
+                      <XCircle size={16} className="me-1" /> {deleteError}
+                  </div>
+              )}
+
+              {selectedTransaction?.category === 'Salaire' && (
+                  <div className="alert alert-warning py-2 small fw-bold mb-3 text-dark text-start">
+                      <AlertTriangle size={16} className="me-2"/>
+                      Attention: La suppression d'un salaire déverrouillera le pointage du mois correspondant.
+                  </div>
+              )}
+
+              {selectedTransaction && (
+                  <div className="bg-light rounded-3 p-3 mb-3 text-start">
+                      <div className="small text-muted">Désignation</div>
+                      <div className="fw-bold small">{selectedTransaction.description}</div>
+                      <div className="small text-muted mt-2">Montant</div>
+                      <div className="fw-bold text-danger">{selectedTransaction.amount?.toLocaleString()} DH</div>
+                  </div>
+              )}
+
+              <Form.Group className="mb-3">
+                  <Form.Control 
+                      type="password"
+                      placeholder="Mot de passe admin"
+                      required
+                      value={deletePassword}
+                      onChange={e => setDeletePassword(e.target.value)}
+                      className="bg-light border-0 text-center fw-bold"
+                      autoFocus
+                  />
+              </Form.Group>
+
+              <div className="d-grid gap-2">
+                  <Button variant="danger" type="submit" className="fw-bold">CONFIRMER SUPPRESSION</Button>
+                  <Button variant="light" onClick={() => setShowDeleteModal(false)}>Annuler</Button>
+              </div>
+          </Modal.Body>
+        </Form>
+      </Modal>
+
+      <ToastContainer position="top-end" className="p-3">
+        <Toast show={toast.show} autohide delay={3000} onClose={() => setToast({...toast, show:false})} bg={toast.variant} className="text-white border-0 shadow">
+          <Toast.Body className="fw-bold d-flex align-items-center gap-2">
+            {toast.variant === 'success' ? <CheckCircle size={18}/> : <XCircle size={18}/>} {toast.message}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   );
 };

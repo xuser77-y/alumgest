@@ -11,6 +11,7 @@ import './Projects.css';
 import './ProjectDetails.css';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { amiriFont } from '../../utils/amiriFont';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -34,14 +35,16 @@ const ProjectDetails = () => {
   const [showEditProjectModal, setShowEditProjectModal] = useState(false);
   const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
   const [showPDFOptions, setShowPDFOptions] = useState(false);
+  const [showItemDeleteModal, setShowItemDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // ── FORM STATES ──
   const [editingItemId, setEditingItemId] = useState(null);
   const [includePricesInPDF, setIncludePricesInPDF] = useState(true);
   
   const [newItem, setNewItem] = useState({ label: '', width: '', height: '', quantity: 1, unitPrice: 0 });
-  const [payment, setPayment] = useState({ amount: '', description: 'Tranche de paiement' });
-  const [newExpense, setNewExpense] = useState({ amount: '', category: 'Matériaux', description: '' });
+  const [payment, setPayment] = useState({ amount: '', description: 'Versement Client', date: new Date().toISOString().split('T')[0] });
+  const [newExpense, setNewExpense] = useState({ amount: '', category: 'Matériaux', description: '', date: new Date().toISOString().split('T')[0] });
   const [editProjectData, setEditProjectData] = useState({ projectName: '', totalPrice: '', deadline: '' });
 
   // ── FETCH DATA ──
@@ -107,7 +110,7 @@ const ProjectDetails = () => {
       setShowEditProjectModal(false);
       fetchData();
       setToast({ show: true, message: 'Infos mises à jour !', variant: 'success' });
-    } catch (err) { alert("Erreur update"); }
+    } catch (err) { setToast({ show: true, message: 'Erreur lors de la mise à jour', variant: 'danger' }); }
   };
 
   const handleFinishProject = async () => {
@@ -116,7 +119,7 @@ const ProjectDetails = () => {
         setShowCompleteModal(false);
         fetchData();
         setToast({ show: true, message: 'Chantier clôturé !', variant: 'success' });
-    } catch (err) { alert("Erreur"); }
+    } catch (err) { setToast({ show: true, message: 'Une erreur est survenue', variant: 'danger' }); }
   };
 
   // ── ITEM HANDLERS ──
@@ -139,14 +142,23 @@ const ProjectDetails = () => {
       setShowItemModal(false);
       fetchData();
       setToast({ show: true, message: 'Élément enregistré !', variant: 'success' });
-    } catch (err) { alert("Erreur"); }
+    } catch (err) { setToast({ show: true, message: 'Une erreur est survenue', variant: 'danger' }); }
   };
 
-  const handleDeleteItem = async (taskId) => {
-    if(window.confirm("Supprimer cet élément ?")) {
-      await api.delete(`/projects/${id}/tasks/${taskId}`);
-      fetchData();
-      setToast({ show: true, message: 'Supprimé', variant: 'danger' });
+  const handleDeleteItem = (taskId) => {
+    setItemToDelete(taskId);
+    setShowItemDeleteModal(true);
+  };
+
+  const confirmDeleteItem = async () => {
+    try {
+        await api.delete(`/projects/${id}/tasks/${itemToDelete}`);
+        setShowItemDeleteModal(false);
+        setItemToDelete(null);
+        fetchData();
+        setToast({ show: true, message: 'Élément supprimé', variant: 'danger' });
+    } catch (err) {
+        setToast({ show: true, message: 'Erreur lors de la suppression', variant: 'danger' });
     }
   };
 
@@ -159,17 +171,17 @@ const ProjectDetails = () => {
       setNewExpense({ amount: '', category: 'Matériaux', description: '' });
       fetchData();
       setToast({ show: true, message: 'Dépense enregistrée', variant: 'success' });
-    } catch (err) { alert("Erreur expense"); }
+    } catch (err) { setToast({ show: true, message: 'Erreur lors de la dépense', variant: 'danger' }); }
   };
 
   const handleAddAdvance = async () => {
     try {
-      await api.post(`/projects/${id}/advance`, { amount: payment.amount, description: payment.description });
+      await api.post(`/projects/${id}/advance`, payment);
       setShowPayModal(false);
-      setPayment({ amount: '', description: 'Versement Client' });
+      setPayment({ amount: '', description: 'Versement Client', date: new Date().toISOString().split('T')[0] });
       fetchData();
       setToast({ show: true, message: 'Paiement client ajouté !', variant: 'success' });
-    } catch (err) { alert("Erreur"); }
+    } catch (err) { setToast({ show: true, message: 'Une erreur est survenue', variant: 'danger' }); }
   };
 
   const updateStatus = async (taskId, newStatus) => {
@@ -182,6 +194,9 @@ const ProjectDetails = () => {
   // ── PDF GENERATOR (WITH FIRST PAYMENT LOGIC) ──
 const generateClientPDF = () => {
   const doc = new jsPDF();
+  doc.addFileToVFS('amiri.ttf', amiriFont);
+  doc.addFont('amiri.ttf', 'amiri', 'normal');
+
   const logoUrl = '/logo.jpg';
 
   /* ───── HEADER ───── */
@@ -189,11 +204,11 @@ const generateClientPDF = () => {
     doc.addImage(logoUrl, 'JPG', 14, 10, 25, 25);
   } catch (e) {}
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.setFontSize(18);
   doc.text("GIL JAKAN", 45, 18);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.setFontSize(10);
   doc.text("ALUMINIUM & MENUISERIE", 45, 24);
 
@@ -203,11 +218,11 @@ const generateClientPDF = () => {
   /* ───── PROJECT INFO ───── */
 
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.text("CHANTIER :", 14, 45);
   doc.text("CLIENT :", 14, 52);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.text(project.projectName.toUpperCase(), 45, 45);
   doc.text(project.client.name.toUpperCase(), 45, 52);
 
@@ -240,10 +255,12 @@ const generateClientPDF = () => {
     theme: "grid",
     headStyles: {
       fillColor: [240, 240, 240],
-      textColor: 0
+      textColor: 0,
+      font: "amiri"
     },
     styles: {
-      fontSize: 9
+      fontSize: 9,
+      font: "amiri"
     }
   });
 
@@ -251,7 +268,7 @@ const generateClientPDF = () => {
 
   let finalY = doc.lastAutoTable.finalY + 12;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.setFontSize(12);
   doc.text("Historique des paiements", 14, finalY);
 
@@ -266,24 +283,25 @@ const generateClientPDF = () => {
     head: [['Date', 'Détail du versement', 'Montant']],
     body: payRows,
     theme: "grid",
-    styles: { fontSize: 9 }
+    headStyles: { font: "amiri" },
+    styles: { fontSize: 9, font: "amiri" }
   });
 
   /* ───── SUMMARY ───── */
 
   finalY = doc.lastAutoTable.finalY + 15;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.text("Récapitulatif", 140, finalY);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.text("Budget total :", 120, finalY + 10);
   doc.text(`${project.totalPrice} DH`, 190, finalY + 10, { align: "right" });
 
   doc.text("Total réglé :", 120, finalY + 18);
   doc.text(`${project.advancePayment} DH`, 190, finalY + 18, { align: "right" });
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.text("Reste à payer :", 120, finalY + 28);
   doc.text(`${remaining} DH`, 190, finalY + 28, { align: "right" });
 
@@ -293,7 +311,7 @@ const generateClientPDF = () => {
   doc.line(14, 285, 196, 285);
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.text("Document généré par le système de gestion GIL JAKAN", 105, 292, { align: "center" });
 
   doc.save(`Fiche_${project.projectName}.pdf`);
@@ -340,7 +358,7 @@ const generateClientPDF = () => {
                 <User size={14} className="text-jakan me-1"/> {project.client?.name} | <Clock size={14} className="ms-2"/> Livraison: {formatDate(project.deadline)}
               </div>
             </div>
-            {!isFinished && <Button variant="link" className="text-muted p-0" onClick={() => setShowEditProjectModal(true)}><Settings size={22}/></Button>}
+            <Button variant="link" className="text-muted p-0" onClick={() => setShowEditProjectModal(true)}><Settings size={22}/></Button>
           </div>
 
           <div className="d-flex justify-content-between align-items-center mb-3 mt-4">
@@ -446,15 +464,20 @@ const generateClientPDF = () => {
 
       <Modal show={showPayModal} onHide={() => setShowPayModal(false)} centered size="sm">
         <Modal.Header closeButton className="border-0"><Modal.Title className="fs-6 fw-bold text-dark">Encaisser Client</Modal.Title></Modal.Header>
-        <Modal.Body className="pt-0 text-center"><Form.Control type="number" onChange={e => setPayment({...payment, amount: e.target.value})} className="fs-2 fw-bold text-center border-0 bg-light py-3 mb-3 text-dark" placeholder="0 DH"/><Button variant="primary" className="w-100 fw-bold shadow" onClick={handleAddAdvance}>VALIDER L'ENCAISSEMENT</Button></Modal.Body>
+        <Modal.Body className="pt-0 text-center">
+            <Form.Control type="number" value={payment.amount} onChange={e => setPayment({...payment, amount: e.target.value})} className="fs-2 fw-bold text-center border-0 bg-light py-3 mb-2 text-dark" placeholder="0 DH"/>
+            <Form.Control type="date" value={payment.date} onChange={e => setPayment({...payment, date: e.target.value})} className="mb-3 fw-bold text-center border-0 bg-light py-2 text-dark" />
+            <Button variant="primary" className="w-100 fw-bold shadow" onClick={handleAddAdvance}>VALIDER L'ENCAISSEMENT</Button>
+        </Modal.Body>
       </Modal>
 
       <Modal show={showExpenseModal} onHide={() => setShowExpenseModal(false)} centered size="sm">
         <Modal.Header closeButton className="border-0"><Modal.Title className="fs-6 fw-bold text-dark">Nouvelle Dépense</Modal.Title></Modal.Header>
         <Form onSubmit={handleLogExpense}><Modal.Body className="pt-0 text-dark">
-            <Form.Select className="mb-2 fw-bold" required onChange={e => setNewExpense({...newExpense, category: e.target.value})}><option value="Matériaux">Matériaux</option>{categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}<option value="Transport">Transport</option></Form.Select>
-            <Form.Control type="number" required onChange={e => setNewExpense({...newExpense, amount: e.target.value})} className="mb-2 fs-4 fw-bold text-center text-dark" placeholder="0 DH" />
-            <Form.Control required onChange={e => setNewExpense({...newExpense, description: e.target.value})} placeholder="Détail..." /></Modal.Body>
+            <Form.Select className="mb-2 fw-bold" value={newExpense.category} required onChange={e => setNewExpense({...newExpense, category: e.target.value})}><option value="Matériaux">Matériaux</option>{categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}<option value="Transport">Transport</option></Form.Select>
+            <Form.Control type="number" required value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} className="mb-2 fs-4 fw-bold text-center text-dark" placeholder="0 DH" />
+            <Form.Control type="date" required value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} className="mb-2 fw-bold text-center text-dark" />
+            <Form.Control required value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} placeholder="Détail..." /></Modal.Body>
             <Modal.Footer className="border-0"><Button variant="primary" type="submit" className="w-100 fw-bold shadow">ENREGISTRER</Button></Modal.Footer>
         </Form>
       </Modal>
@@ -469,6 +492,18 @@ const generateClientPDF = () => {
             </Modal.Body>
             <Modal.Footer className="border-0"><Button variant="primary" type="submit" className="w-100 fw-bold shadow">SAUVEGARDER</Button></Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={showItemDeleteModal} onHide={() => setShowItemDeleteModal(false)} centered size="sm">
+        <Modal.Body className="p-4 text-center">
+            <Trash2 size={50} className="text-danger mb-3" />
+            <h4 className="fw-bold text-dark">Supprimer l'élément ?</h4>
+            <p className="small text-muted">Cette action est irréversible.</p>
+            <div className="d-grid gap-2 mt-4">
+                <Button variant="danger" className="fw-bold" onClick={confirmDeleteItem}>OUI, SUPPRIMER</Button>
+                <Button variant="light" onClick={() => setShowItemDeleteModal(false)}>Annuler</Button>
+            </div>
+        </Modal.Body>
       </Modal>
 
       <ToastContainer position="top-end" className="p-3"><Toast show={toast.show} autohide delay={3000} onClose={() => setToast({...toast, show:false})} bg={toast.variant} className="text-white border-0 shadow"><Toast.Body className="fw-bold d-flex align-items-center gap-2">{toast.variant === 'success' ? <CheckCircle size={18}/> : <XCircle size={18}/>} {toast.message}</Toast.Body></Toast></ToastContainer>

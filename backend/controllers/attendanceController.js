@@ -9,8 +9,6 @@ exports.getAttendanceByDate = async (req, res) => {
     const day = d.getDate();
     let m = d.getMonth() + 1;
     let y = d.getFullYear();
-    if (day > 10) m++;
-    if (m > 12) { m = 1; y++; }
 
     const records = await Attendance.find({ date });
     const paidRecords = await Payroll.find({ month: m, year: y });
@@ -33,8 +31,6 @@ exports.saveAttendance = async (req, res) => {
   const day = d.getDate();
   let m = d.getMonth() + 1;
   let y = d.getFullYear();
-  if (day > 10) m++;
-  if (m > 12) { m = 1; y++; }
 
   try {
     // 1. Get all workers already paid for THIS specific period
@@ -55,6 +51,26 @@ exports.saveAttendance = async (req, res) => {
 
     await Promise.all(promises.filter(p => p !== null));
     res.json({ message: "Enregistré (Les ouvriers déjà payés ont été ignorés)." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --- 3. DELETE ATTENDANCE ---
+exports.deleteAttendance = async (req, res) => {
+  const { workerId, date } = req.params;
+  const d = new Date(date);
+  let m = d.getMonth() + 1;
+  let y = d.getFullYear();
+
+  try {
+    const paidRecord = await Payroll.findOne({ workerId, month: m, year: y });
+    if (paidRecord) {
+      return res.status(403).json({ message: "Impossible de supprimer : cet ouvrier a déjà été payé pour ce mois." });
+    }
+
+    await Attendance.findOneAndDelete({ workerId, date });
+    res.json({ message: "Pointage supprimé avec succès." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

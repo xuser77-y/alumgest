@@ -3,7 +3,7 @@ const Transaction = require('../models/Transaction');
 
 exports.getProjectExpenses = async (req, res) => {
   try {
-    const expenses = await Transaction.find({ projectId: req.params.id, type: 'minus' });
+    const expenses = await Transaction.find({ projectId: req.params.id, type: 'minus' }).sort({ date: -1, _id: -1 });
     res.json(expenses);
   } catch (err) { res.status(500).json(err); }
 };
@@ -70,17 +70,6 @@ exports.deleteProject = async (req, res) => {
   }
 };
 
-exports.completeProject = async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id);
-    project.status = 'completed';
-    project.finalSpent = req.body.finalSpent;
-    await project.save();
-    res.json(project);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
 
 exports.addTaskToProject = async (req, res) => {
   try {
@@ -138,7 +127,6 @@ exports.deleteTask = async (req, res) => {
 };
 
 
-// REPLACE your completeProject with this one
 exports.completeProject = async (req, res) => {
   const { finalSpent } = req.body; 
   try {
@@ -147,6 +135,7 @@ exports.completeProject = async (req, res) => {
 
     project.status = 'completed';
     project.finalSpent = Number(finalSpent); 
+    project.finishedAt = new Date(); // <── SET FINISHED DATE
     await project.save();
     res.json({ message: "Chantier clôturé avec succès !", project });
   } catch (err) {

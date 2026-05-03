@@ -72,9 +72,9 @@ exports.getWorkerProfile = async (req, res) => {
   const { id } = req.params;
   const { year, month } = req.query; // Période sélectionnée
   
-  // Logic 11-10
-  const start = new Date(year, month - 2, 11).toISOString().split('T')[0];
-  const end = new Date(year, month - 1, 10).toISOString().split('T')[0];
+  // Calendar month logic
+  const start = new Date(Date.UTC(year, month - 1, 1)).toISOString().split('T')[0];
+  const end = new Date(Date.UTC(year, month, 0)).toISOString().split('T')[0];
 
   try {
     const worker = await User.findById(id);
@@ -116,10 +116,9 @@ exports.getMyStats = async (req, res) => {
   const year = Number(req.query.year);
   const month = Number(req.query.month);
 
-  // 1. Calculate Cycle Range (11th to 10th)
-  // JS Date handles month 0 as December of previous year automatically
-  const startDate = new Date(year, month - 2, 11);
-  const endDate = new Date(year, month - 1, 10);
+  // 1. Calculate Cycle Range (Calendar month)
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0));
   
   const startStr = startDate.toISOString().split('T')[0];
   const endStr = endDate.toISOString().split('T')[0];
@@ -135,34 +134,54 @@ exports.getMyStats = async (req, res) => {
     const isPaidRecord = await Payroll.findOne({ workerId, month, year });
 
     let totalAdvances = 0;
+    const worker = await User.findById(workerId);
+    let brut = 0;
+    let net = 0;
 
     if (isPaidRecord) {
       // If paid, show what was actually deducted back then
       totalAdvances = isPaidRecord.advances;
+      brut = isPaidRecord.brut !== undefined ? isPaidRecord.brut : (isPaidRecord.netAmount + isPaidRecord.advances);
+      net = isPaidRecord.netAmount;
     } 
     else if (attendance.length > 0) {
       // If not paid but worked, show the GLOBAL unsettled debt
-      // Debt follows the worker across years!
       const pendingAdvances = await Transaction.find({ 
         workerId, 
         category: 'Avance', 
         isSettled: false 
       });
       totalAdvances = pendingAdvances.reduce((s, t) => s + t.amount, 0);
+
+      attendance.forEach(r => {
+        const mult = r.status === 'full' ? 1 : r.status === 'half' ? 0.5 : 0;
+        const b = r.displacement ? 0.5 : 0;
+        const dailySal = worker.dailySalary || 0;
+        brut += (dailySal * (mult + b));
+      });
+      net = brut - totalAdvances;
     } 
     else {
-      // No work, no pay record -> Show 0
       totalAdvances = 0;
+      brut = 0;
+      net = 0;
     }
+
+    const advancesList = await Transaction.find({ workerId, category: 'Avance' })
+      .sort({ date: -1 })
+      .limit(10);
 
     res.json({ 
       attendance, 
       totalAdvances, 
+      brut,
+      net,
+      advancesList,
       isPaid: !!isPaidRecord,
-      // Send period info for the UI label
+      // Send period info for the UI label using UTC so dates don't shift
       period: {
-          start: { m: startDate.getMonth() + 1, y: startDate.getFullYear() },
-          end: { m: endDate.getMonth() + 1, y: endDate.getFullYear() }
+          start: { m: startDate.getUTCMonth() + 1, y: startDate.getUTCFullYear() },
+          end: { m: endDate.getUTCMonth() + 1, y: endDate.getUTCFullYear() }
       }
     });
   } catch (err) { 

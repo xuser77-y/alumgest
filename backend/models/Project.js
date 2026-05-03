@@ -16,6 +16,7 @@ const ProjectSchema = new mongoose.Schema({
   advancePayment: { type: Number, default: 0 },
   finalSpent: { type: Number, default: 0 },
   deadline: { type: Date }, // NOT required
+  finishedAt: { type: Date }, // Recorded when project status is set to 'completed'
   status: { type: String, enum: ['active', 'completed'], default: 'active' },
   items: [ElementSchema]
 }, { timestamps: true });

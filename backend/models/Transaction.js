@@ -9,6 +9,9 @@ const TransactionSchema = new mongoose.Schema({
   projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
   date: { type: Date, default: Date.now },
   workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, 
+  fournisseurId: { type: mongoose.Schema.Types.ObjectId, ref: 'Fournisseur' },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+  historyId: { type: String }, // Stores linked record ID (History ID, Debt Payment ID, etc.)
   isSettled: { type: Boolean, default: false } 
 });
 

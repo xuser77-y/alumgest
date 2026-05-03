@@ -9,10 +9,13 @@ const Category = require('./models/Category');
 const Catalog = require('./models/Catalog');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
+
 // Connect DB
 const connectDB = async () => {
   try {
@@ -39,42 +42,39 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/manager', require('./routes/managerRoutes'));
 app.use('/api/catalog', require('./routes/catalogRoutes'));
 app.use('/api/portfolio', require('./routes/portfolioRoutes'));
+app.use('/api/fournisseurs', require('./routes/fournisseurRoutes'));
+app.use('/api/debts', require('./routes/debtRoutes'));
+
 // --- 💰 ADD ADVANCE PAYMENT ROUTE ---
 app.post('/api/projects/:id/advance', async (req, res) => {
   const { amount, description } = req.body;
   
   try {
-    // 1. Find the project
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: "Projet non trouvé" });
 
-    // 2. Update advance payment
     const numericAmount = Number(amount);
     if (isNaN(numericAmount)) return res.status(400).json({ message: "Montant invalide" });
 
     project.advancePayment += numericAmount;
     await project.save();
 
-    // 3. Record in Bank (Transaction)
     const transaction = new Transaction({
       type: 'plus',
       category: 'Revenus',
       amount: numericAmount,
-      description: `Encaissement : ${project.projectName} ${description ? '('+description+')' : ''}`,
+      description: `Encaissement : ${project.projectName} ${req.body.description ? '('+req.body.description+')' : ''}`,
+      date: req.body.date ? new Date(req.body.date) : new Date(),
       projectId: project._id,
-      isSettled: true // Client payments are automatically settled
+      isSettled: true 
     });
     
     await transaction.save();
-
     res.json(project);
-
   } catch (err) {
     console.error("❌ Erreur Backend:", err.message);
     res.status(500).json({ message: err.message });
   }
 });
-
-
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

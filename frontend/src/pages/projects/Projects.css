@@ -31,3 +31,31 @@
 .result-item-jakan:hover .text-muted {
     color: rgba(255,255,255,0.7) !important;
 }
+
+/* ── PROJECT CARDS ── */
+.project-card-jakan {
+    border-radius: 20px !important;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+[data-bs-theme='light'] .project-card-jakan {
+    border: 2px solid #0061f2 !important; /* Strong Blue Border */
+    background: #ffffff !important;
+}
+
+.project-card-jakan:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 97, 242, 0.15) !important;
+    border-color: #004dc0 !important;
+}
+
+.project-accent-bar {
+    height: 4px;
+    width: 100%;
+    background: var(--jakan-gradient);
+    position: absolute;
+    top: 0;
+    left: 0;
+}

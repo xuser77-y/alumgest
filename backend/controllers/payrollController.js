@@ -4,12 +4,10 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 
 
-// HELPER: Exact 11th-to-10th Range
+// HELPER: Exact Calendar Month Range
 const getCycleRange = (year, month) => {
-  const start = new Date(year, month - 2, 11);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(year, month - 1, 10);
-  end.setHours(23, 59, 59, 999);
+  const start = new Date(Date.UTC(year, month - 1, 1));
+  const end = new Date(Date.UTC(year, month, 0));
   return { 
     start: start.toISOString().split('T')[0], 
     end: end.toISOString().split('T')[0] 
@@ -41,9 +39,10 @@ exports.getMonthlyReport = async (req, res) => {
       const paidRecord = await Payroll.findOne({ workerId: worker._id, month, year });
 
       if (paidRecord) {
+        const exactBrut = paidRecord.brut !== undefined ? paidRecord.brut : (paidRecord.netAmount + paidRecord.advances);
         return {
           _id: worker._id, name: worker.name, poste: worker.poste,
-          brut: paidRecord.netAmount + paidRecord.advances, // Reconstruct brut
+          brut: exactBrut,
           advances: paidRecord.advances,
           net: paidRecord.netAmount,
           isPaid: true,
@@ -82,8 +81,9 @@ exports.getSingleWorkerStats = async (req, res) => {
     const paidRecord = await Payroll.findOne({ workerId, month, year });
     
     if (paidRecord) {
+      const exactBrut = paidRecord.brut !== undefined ? paidRecord.brut : (paidRecord.netAmount + paidRecord.advances);
       return res.json({
-        brut: paidRecord.netAmount + paidRecord.advances,
+        brut: exactBrut,
         advances: paidRecord.advances,
         net: paidRecord.netAmount,
         isPaid: true
@@ -127,7 +127,7 @@ exports.confirmPayment = async (req, res) => {
         amount: carriedDebt,
         workerId: workerId,
         isSettled: false, // <── Important: This stays open for next month
-        description: `Report de dette (Solde négatif mois ${month}/${year})`
+        description: `Report de dette - ${workerName} (Solde négatif mois ${month}/${year})`
       });
       await reportTransaction.save();
 
@@ -136,6 +136,7 @@ exports.confirmPayment = async (req, res) => {
         workerId, month, year,
         totalDays: req.body.totalDays,
         totalBonus: req.body.totalBonus,
+        brut: brut, // <── Save exactly what the brut was
         advances: advances, // Records the full advance processed
         netAmount: 0 // <── Manager gave 0 DH cash
       });
@@ -145,7 +146,10 @@ exports.confirmPayment = async (req, res) => {
 
     } else {
       // ── CASE: POSITIVE BALANCE (NORMAL PAY) ──
-      const payroll = new Payroll(req.body);
+      const payroll = new Payroll({
+        ...req.body,
+        brut: brut // Explicitly ensure brut is saved
+      });
       await payroll.save();
 
       // Create a Salary transaction (Minus) to show cash leaving the shop
@@ -170,10 +174,10 @@ exports.confirmPayment = async (req, res) => {
 exports.getWorkerMonthDetails = async (req, res) => {
   const { workerId, year, month } = req.params;
   
-  // Calculate Start: 11th of Previous Month
-  const startDate = new Date(year, month - 2, 11).toISOString().split('T')[0];
-  // Calculate End: 10th of Selected Month
-  const endDate = new Date(year, month - 1, 10).toISOString().split('T')[0];
+  // Calculate Start: 1st of the Month
+  const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString().split('T')[0];
+  // Calculate End: Last day of the Month
+  const endDate = new Date(Date.UTC(year, month, 0)).toISOString().split('T')[0];
 
   try {
     const records = await Attendance.find({

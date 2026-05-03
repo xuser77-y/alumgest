@@ -1,0 +1,131 @@
+const Fournisseur = require('../models/Fournisseur');
+const FournisseurHistory = require('../models/FournisseurHistory');
+const Transaction = require('../models/Transaction');
+
+exports.getFournisseurs = async (req, res) => {
+  try {
+    const fournisseurs = await Fournisseur.find().sort({ createdAt: -1 });
+    res.json(fournisseurs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getFournisseurById = async (req, res) => {
+  try {
+    const fournisseur = await Fournisseur.findById(req.params.id);
+    if (!fournisseur) return res.status(404).json({ message: 'Fournisseur introuvable' });
+    
+    const history = await FournisseurHistory.find({ fournisseurId: req.params.id }).sort({ date: -1, _id: -1 });
+    res.json({ fournisseur, history });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.createFournisseur = async (req, res) => {
+  try {
+    const { name, phone, email, address } = req.body;
+    const newFournisseur = new Fournisseur({ name, phone, email, address });
+    await newFournisseur.save();
+    res.status(201).json(newFournisseur);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateFournisseur = async (req, res) => {
+  try {
+    const { name, phone, email, address } = req.body;
+    const fournisseur = await Fournisseur.findByIdAndUpdate(req.params.id, { name, phone, email, address }, { new: true });
+    if (!fournisseur) return res.status(404).json({ message: 'Fournisseur introuvable' });
+    res.json(fournisseur);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteFournisseur = async (req, res) => {
+  try {
+    const fournisseur = await Fournisseur.findById(req.params.id);
+    if (!fournisseur) return res.status(404).json({ message: 'Fournisseur introuvable' });
+    
+    // Also delete history
+    await FournisseurHistory.deleteMany({ fournisseurId: req.params.id });
+    await Fournisseur.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Fournisseur supprimé' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.addPurchase = async (req, res) => {
+  try {
+    const { amount, description, date } = req.body;
+    const fournisseur = await Fournisseur.findById(req.params.id);
+    if (!fournisseur) return res.status(404).json({ message: 'Fournisseur introuvable' });
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) return res.status(400).json({ message: "Montant invalide" });
+
+    // Create history record
+    const history = new FournisseurHistory({
+      fournisseurId: fournisseur._id,
+      type: 'purchase',
+      amount: numericAmount,
+      description: description || 'Achat de marchandises',
+      date: date ? new Date(date) : new Date()
+    });
+    await history.save();
+
+    // Update fournisseur totals
+    fournisseur.totalBought += numericAmount;
+    await fournisseur.save();
+
+    res.json(fournisseur);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.addPayment = async (req, res) => {
+  try {
+    const { amount, description, date } = req.body;
+    const fournisseur = await Fournisseur.findById(req.params.id);
+    if (!fournisseur) return res.status(404).json({ message: 'Fournisseur introuvable' });
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) return res.status(400).json({ message: "Montant invalide" });
+
+    // Create history record
+    const history = new FournisseurHistory({
+      fournisseurId: fournisseur._id,
+      type: 'payment',
+      amount: numericAmount,
+      description: description || 'Paiement fournisseur',
+      date: date ? new Date(date) : new Date()
+    });
+    await history.save();
+
+    // Update fournisseur totals
+    fournisseur.totalPaid += numericAmount;
+    await fournisseur.save();
+
+    // Record in Global Finances (Transaction)
+    const transaction = new Transaction({
+      type: 'minus',
+      category: 'Fournisseur',
+      amount: numericAmount,
+      description: `Paiement fournisseur : ${fournisseur.name} ${description ? '('+description+')' : ''}`,
+      date: date ? new Date(date) : new Date(),
+      fournisseurId: fournisseur._id,
+      historyId: history._id, // LINK TO HISTORY
+      isSettled: true
+    });
+    await transaction.save();
+
+    res.json(fournisseur);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

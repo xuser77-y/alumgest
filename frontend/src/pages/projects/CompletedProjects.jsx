@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Badge, Button } from 'react-bootstrap';
-import { ArrowRight, TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { ArrowRight, TrendingUp, TrendingDown, DollarSign, AlertTriangle, CheckCircle, Package, Settings } from 'lucide-react';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -63,14 +63,38 @@ const CompletedProjects = () => {
           const profitMargin = Math.round((profit / p.totalPrice) * 100);
           const debt = p.totalPrice - p.advancePayment;
 
+          // ── AGING DEBT LOGIC ──
+          const getCardStyle = () => {
+            if (debt <= 0 || !p.finishedAt) return { background: 'var(--bg-card)' };
+            
+            const finishedDate = new Date(p.finishedAt);
+            const now = new Date();
+            const diffMonths = (now.getFullYear() - finishedDate.getFullYear()) * 12 + (now.getMonth() - finishedDate.getMonth());
+
+            if (diffMonths >= 3) return { background: '#f8d7da', border: '2px solid #dc3545' }; // Solid Red Alert
+            if (diffMonths >= 2) return { background: '#ffffcc', border: '2px solid #ffc107' }; // Brighter Yellow Alert
+            return { background: 'var(--bg-card)' };
+          };
+
           return (
             <Col md={6} lg={4} key={p._id}>
-              <Card className="project-card-jakan border-0 shadow-sm bg-body">
+              <Card className="project-card-jakan shadow-sm h-100 position-relative" style={getCardStyle()}>
                 <div className="project-accent-bar" style={{ background: debt > 0 ? '#ee3f58' : '#16b870' }} />
-                <Card.Body className="p-4">
+                
+                {/* SETTINGS BUTTON (GEAR ICON) */}
+                <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 10 }}>
+                    <Button variant="link" className="text-muted p-0" onClick={() => navigate(`/projects/details/${p._id}`)}>
+                        <Settings size={20} />
+                    </Button>
+                </div>
 
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4 className="jakan-title m-0">{p.projectName}</h4>
+                <Card.Body className="p-4 d-flex flex-column">
+                  <div className="d-flex justify-content-between align-items-center mb-3 pe-4">
+                    <h4 className="jakan-title m-0 text-truncate" style={{ maxWidth: '80%' }}>{p.projectName}</h4>
+                  </div>
+
+                  <div className="d-flex justify-content-between mb-3">
+                    <div className="text-muted small">{p.client?.name}</div>
                     {debt > 0 ? (
                       <Badge bg="danger" className="px-2 py-1 shadow-sm pulse">IMPAYÉ</Badge>
                     ) : (
@@ -78,9 +102,7 @@ const CompletedProjects = () => {
                     )}
                   </div>
 
-                  <div className="text-muted small mb-3">{p.client?.name}</div>
-
-                  <div className="p-3 rounded-4 border bg-light bg-opacity-10 d-flex justify-content-between align-items-center mb-3">
+                  <div className="p-3 rounded-4 border bg-white bg-opacity-50 d-flex justify-content-between align-items-center mb-3 shadow-sm">
                     <div>
                       <div className="x-small fw-bold text-muted">BÉNÉFICE RÉEL</div>
                       <div className={`fs-4 fw-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -98,15 +120,21 @@ const CompletedProjects = () => {
                   </div>
 
                   {debt > 0 && (
-                    <div className="mt-3 p-2 bg-danger bg-opacity-10 rounded border border-danger border-opacity-25 text-center">
+                    <div className="mt-auto mb-3 p-2 bg-danger bg-opacity-10 rounded border border-danger border-opacity-25 text-center">
                       <span className="text-danger fw-bold small">Reste à récupérer : {debt.toLocaleString()} DH</span>
                     </div>
                   )}
 
-                  <Button variant="outline-success" className="w-100 fw-bold mt-2" onClick={() => navigate(`/projects/details/${p._id}`)}>
-                    VOIR DOSSIER COMPLET
-                  </Button>
-
+                  <div className="d-flex gap-2 mt-auto">
+                    <Button 
+                        variant="primary" 
+                        size="sm" 
+                        className="px-4 fw-bold rounded-3 shadow-sm flex-grow-1" 
+                        onClick={() => navigate(`/projects/details/${p._id}`)}
+                    >
+                        OUVRIR <ArrowRight size={14} className="ms-1"/>
+                    </Button>
+                  </div>
                 </Card.Body>
               </Card>
             </Col>

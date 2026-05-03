@@ -1,0 +1,1 @@
+export const amiriFont = "NDA0OiBOb3QgRm91bmQ=";

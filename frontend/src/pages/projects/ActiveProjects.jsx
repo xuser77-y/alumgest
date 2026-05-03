@@ -49,11 +49,6 @@ const ActiveProjects = () => {
         // 1. If NEW CLIENT mode, handle client creation first
         if (clientMode === 'new') {
         const clientRes = await api.post('/clients/check', newClient);
-        
-        if (clientRes.data.exists) {
-            setModalError(`Le client avec le numéro ${newClient.phone} existe déjà sous le nom "${clientRes.data.client.name}". Utilisez "Ancien Client" ou changez le numéro.`);
-            return; // STOP! Don't close modal, just show error
-        }
         clientId = clientRes.data.client._id;
         }
 
@@ -142,7 +137,7 @@ const ActiveProjects = () => {
 
           return (
             <Col md={6} lg={4} key={project._id}>
-              <Card className="project-card-jakan border-0 shadow-sm h-100 bg-body">
+              <Card className="project-card-jakan shadow-sm h-100 bg-body">
                 <div className="project-accent-bar" />
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between mb-3">
@@ -269,7 +264,7 @@ const ActiveProjects = () => {
                                 <Col md={6}><Form.Label className="x-small fw-bold">NOM COMPLET</Form.Label>
                                 <Form.Control required onChange={e => setNewClient({...newClient, name: e.target.value})} /></Col>
                                 <Col md={6}><Form.Label className="x-small fw-bold">TÉLÉPHONE</Form.Label>
-                                <Form.Control required onChange={e => setNewClient({...newClient, phone: e.target.value})} /></Col>
+                                <Form.Control onChange={e => setNewClient({...newClient, phone: e.target.value})} /></Col>
                                 <Col md={12}><Form.Label className="x-small fw-bold">ADRESSE</Form.Label>
                                 <Form.Control onChange={e => setNewClient({...newClient, address: e.target.value})} /></Col>
                             </Row>

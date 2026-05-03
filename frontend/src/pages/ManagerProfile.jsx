@@ -25,6 +25,7 @@ const ManagerProfile = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportPassword, setExportPassword] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -90,6 +91,7 @@ const ManagerProfile = () => {
   // ── SECURE EXPORT FUNCTION ──
   const handleSecureExport = async (e) => {
     e.preventDefault();
+    setExportError('');
     setIsExporting(true);
     try {
         const response = await api.post('/manager/export-secure', { password: exportPassword });
@@ -108,7 +110,9 @@ const ManagerProfile = () => {
         setExportPassword('');
         setToast({ show: true, message: 'Base de données exportée avec succès !', variant: 'success' });
     } catch (err) {
-        setToast({ show: true, message: err.response?.data?.message || 'Erreur de mot de passe', variant: 'danger' });
+        const errorMsg = err.response?.data?.message || 'Mot de passe incorrect';
+        setExportError(errorMsg);
+        setToast({ show: true, message: errorMsg, variant: 'danger' });
     } finally {
         setIsExporting(false);
     }
@@ -243,7 +247,11 @@ const ManagerProfile = () => {
             <Button 
               variant="outline-primary" 
               className="w-100 text-start d-flex align-items-center justify-content-between py-3 border-2 mb-2"
-              onClick={() => setShowExportModal(true)}
+              onClick={() => {
+                setShowExportModal(true);
+                setExportError('');
+                setExportPassword('');
+              }}
             >
                 <div className="d-flex align-items-center gap-2">
                     <Database size={20} />
@@ -268,6 +276,12 @@ const ManagerProfile = () => {
           <Modal.Body className="text-center pt-0 text-dark">
               <ShieldAlert size={40} className="text-primary mb-3" />
               <p className="small text-muted">Veuillez entrer votre mot de passe administrateur pour autoriser l'exportation des données sensibles.</p>
+              {exportError && (
+                <div className="alert alert-danger py-2 small fw-bold mb-3">
+                  <XCircle size={16} className="me-1" /> {exportError}
+                </div>
+              )}
+
               <Form.Control 
                   type="password" 
                   placeholder="Votre mot de passe"

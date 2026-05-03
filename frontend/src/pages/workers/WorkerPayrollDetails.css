@@ -17,6 +17,16 @@
     background-color: var(--bg-card);
 }
 
+.day-card.editable {
+    cursor: pointer;
+}
+
+.day-card.editable:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: var(--jakan-blue);
+}
+
 .day-card .day-label {
     font-size: 0.65rem;
     font-weight: 700;
@@ -34,7 +44,8 @@
 /* ── STATUS COLORS ── */
 .day-card.full { background-color: #22c55e !important; color: white !important; border: none; }
 .day-card.half { background-color: #eab308 !important; color: #1e293b !important; border: none; }
-.day-card.absent { opacity: 0.4; }
+.day-card.absent { background-color: #ef4444 !important; color: white !important; border: none; opacity: 1; }
+.day-card.missing { opacity: 0.4; }
 
 /* ── FINANCIAL SUMMARY CARD ── */
 .summary-card-pro {
@@ -89,6 +100,26 @@
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
+.btn-acompte-pro {
+    background: #ffca28 !important; /* Vibrant Gold */
+    color: #1e293b !important; /* Dark Slate for contrast */
+    border: none !important;
+    font-weight: 800 !important;
+    padding: 14px !important;
+    border-radius: 15px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(255, 202, 40, 0.3);
+}
+
+.btn-acompte-pro:hover {
+    background: #ffb300 !important;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(255, 202, 40, 0.5);
+}
+
 .btn-jakan-pdf {
     background: #e11d48 !important;
     color: white !important;
@@ -101,4 +132,4 @@
 /* ── THEME ADAPTATION ── */
 [data-bs-theme='dark'] .day-card .day-number { color: white; }
 [data-bs-theme='light'] .day-card .day-number { color: #1e293b; }
-.day-card.full .day-number, .day-card.half .day-number { color: inherit !important; }
+.day-card.full .day-number, .day-card.half .day-number, .day-card.absent .day-number { color: inherit !important; }

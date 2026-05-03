@@ -8,6 +8,10 @@ const Payroll = require('../models/Payroll');
 const Category = require('../models/Category');
 const Catalog = require('../models/Catalog');
 const PortfolioProject = require('../models/PortfolioProject'); 
+const Fournisseur = require('../models/Fournisseur');
+const FournisseurHistory = require('../models/FournisseurHistory');
+const Debt = require('../models/Debt');
+
 // 1. Get Stats for Hero
 exports.getManagerStats = async (req, res) => {
   try {
@@ -19,16 +23,18 @@ exports.getManagerStats = async (req, res) => {
     res.json({
       workersCount: workers.length,
       liquidCash: totalIn - totalOut,
-      workerList: workers // Send list for the dropdown
+      workerList: workers 
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// 2. Manager Updates Own Password (OLD PASSWORD REQUIRED)
+// 2. Manager Updates Own Password
 exports.updateOwnPassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+    
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(401).json({ message: "Ancien mot de passe incorrect" });
 
@@ -38,7 +44,7 @@ exports.updateOwnPassword = async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 };
 
-// 3. Manager Resets Worker Password (BYBOSS - NO OLD PASS REQUIRED)
+// 3. Manager Resets Worker Password
 exports.resetWorkerPassword = async (req, res) => {
   const { workerId, newPassword } = req.body;
   try {
@@ -51,42 +57,49 @@ exports.resetWorkerPassword = async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 };
 
-
-
-
-
-
-
+// 4. Secure Database Export
 exports.exportBackupSecure = async (req, res) => {
-  const { password } = req.body; // Le mot de passe envoyé par le modal
+  const { password } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
     
-    // 1. Vérifier le mot de passe
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Accès refusé : Mot de passe incorrect" });
 
-    // 2. Extraire toutes les données
-    const [users, clients, projects, attendances, transactions, categories, payrolls, portfolio] = await Promise.all([
-      User.find({}), Client.find({}), Project.find({}), Attendance.find({}),
-      Transaction.find({}), Category.find({}), Payroll.find({}), PortfolioProject.find({})
-    ]);
+    const data = {};
+    const models = {
+      users: User,
+      clients: Client,
+      projects: Project,
+      attendances: Attendance,
+      transactions: Transaction,
+      categories: Category,
+      payrolls: Payroll,
+      portfolio: PortfolioProject,
+      catalog: Catalog,
+      fournisseurs: Fournisseur,
+      fournisseurHistories: FournisseurHistory,
+      debts: Debt
+    };
 
-    // 3. Formatage pour Compass (Un objet avec des tableaux propres)
+    for (const [key, model] of Object.entries(models)) {
+        try {
+            if (model && typeof model.find === 'function') {
+                data[key] = await model.find({});
+            } else {
+                data[key] = [];
+            }
+        } catch (mErr) {
+            data[key] = []; 
+        }
+    }
+
     const backupData = {
       exported_at: new Date().toISOString(),
-      database: "AlumGest_GilJakan",
-      data: {
-        users,
-        clients,
-        projects,
-        attendances,
-        transactions,
-        categories,
-        payrolls,
-        portfolio
-      }
+      database: "AlumGest_GilJakan_FULL",
+      data: data
     };
 
     res.json(backupData);

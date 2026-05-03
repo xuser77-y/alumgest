@@ -3,7 +3,7 @@ import { Nav, Accordion } from 'react-bootstrap';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, FolderKanban, Wallet, 
-  BarChart3, Settings, ChevronDown, ClipboardList ,Globe 
+  BarChart3, Settings, ChevronDown, ClipboardList ,Globe, Truck, UserCircle
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import './Sidebar.css';
@@ -19,6 +19,8 @@ const Sidebar = () => {
     if (location.pathname.includes('/projects')) return '1';
     if (location.pathname.includes('/finance')) return '2';
     if (location.pathname.includes('/analytics')) return '3';
+    if (location.pathname.includes('/fournisseurs')) return '4';
+    if (location.pathname.includes('/clients')) return '5';
     return null;
   };
 
@@ -79,6 +81,31 @@ const Sidebar = () => {
                 <Accordion.Body className="py-0 ps-5">
                   <Nav.Link as={NavLink} to="/finance/history" className="sub-link-jakan">Historique Caisse</Nav.Link>
                   <Nav.Link as={NavLink} to="/finance/extra" className="sub-link-jakan">Flux Hors Chantier</Nav.Link>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+
+            {/* MENU : FOURNISSEURS */}
+            <Accordion defaultActiveKey={getActiveKey()} className="sidebar-accordion mb-2">
+              <Accordion.Item eventKey="4">
+                <Accordion.Header>
+                  <div className="d-flex align-items-center"><Truck size={20} className="me-3" /> Fournisseurs</div>
+                </Accordion.Header>
+                <Accordion.Body className="py-0 ps-5">
+                  <Nav.Link as={NavLink} to="/fournisseurs" className="sub-link-jakan">Liste Fournisseurs</Nav.Link>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+
+            {/* MENU : CLIENTS */}
+            <Accordion defaultActiveKey={getActiveKey()} className="sidebar-accordion mb-2">
+              <Accordion.Item eventKey="5">
+                <Accordion.Header>
+                  <div className="d-flex align-items-center"><UserCircle size={20} className="me-3" /> Clients</div>
+                </Accordion.Header>
+                <Accordion.Body className="py-0 ps-5">
+                  <Nav.Link as={NavLink} to="/clients" end className="sub-link-jakan">Liste Clients</Nav.Link>
+                  <Nav.Link as={NavLink} to="/clients/debts" className="sub-link-jakan">Dettes Clients</Nav.Link>
                 </Accordion.Body>
               </Accordion.Item>
             </Accordion>

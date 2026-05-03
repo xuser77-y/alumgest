@@ -5,6 +5,7 @@ import { ArrowLeft, PlusCircle, FileText, CheckCircle, XCircle } from 'lucide-re
 import api from '../../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { amiriFont } from '../../utils/amiriFont';
 import './WorkerPayrollDetails.css'; 
 import { useNavigate } from 'react-router-dom';
 const WorkerPayrollDetails = () => {
@@ -17,10 +18,15 @@ const WorkerPayrollDetails = () => {
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', variant: 'success' });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [editStatus, setEditStatus] = useState('full');
+  const [editDisplacement, setEditDisplacement] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const getRange = () => {
-    const start = new Date(year, month - 2, 11);
-    const end = new Date(year, month - 1, 10);
+    const start = new Date(Date.UTC(year, month - 1, 1));
+    const end = new Date(Date.UTC(year, month, 0));
     const arr = [];
     let dt = new Date(start);
     while (dt <= end) { arr.push(new Date(dt).toISOString().split('T')[0]); dt.setDate(dt.getDate() + 1); }
@@ -46,7 +52,7 @@ const WorkerPayrollDetails = () => {
     try {
       await api.post('/transactions', {
         type: 'minus', category: 'Avance', amount: Number(advanceAmount),workerId: workerId,
-        description: `Acompte: ${workerData?.name || 'Ouvrier'} [ID:${workerId}]` 
+        description: `Acompte: ${workerData?.name || 'Ouvrier'}` 
       });
       setShowAdvanceModal(false); setAdvanceAmount('');
       await loadAllData();
@@ -54,89 +60,120 @@ const WorkerPayrollDetails = () => {
     } catch (err) { setToast({ show: true, message: 'Erreur lors de l\'enregistrement', variant: 'danger' }); }
   };
 
-const generatePDF = () => {
-  const doc = new jsPDF();
-  const logoUrl = "/logo.jpg";
+  const handleDayClick = (dateStr, record) => {
+    if (stats.isPaid) return;
+    setSelectedDay({ date: dateStr, ...record });
+    setEditStatus(record?.status || 'absent');
+    setEditDisplacement(record?.displacement || false);
+    setShowEditModal(true);
+  };
 
-  /* ───── HEADER ───── */
+  const handleUpdateAttendance = async () => {
+    if (!selectedDay) return;
+    try {
+      await api.post('/attendance/bulk', {
+        date: selectedDay.date,
+        records: [{
+          workerId: workerId,
+          status: editStatus,
+          displacement: editDisplacement
+        }]
+      });
+      setShowEditModal(false);
+      await loadAllData();
+      setToast({ show: true, message: 'Pointage mis à jour !', variant: 'success' });
+    } catch (err) {
+      setToast({ show: true, message: 'Erreur lors de la mise à jour', variant: 'danger' });
+    }
+  };
 
-  try {
-    doc.addImage(logoUrl, "JPG", 14, 10, 25, 25);
-  } catch (e) {}
+  const handleDeleteAttendance = () => {
+    if (!selectedDay) return;
+    setShowDeleteConfirm(true);
+  };
 
-  doc.setFont("helvetica", "bold");
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/attendance/${workerId}/${selectedDay.date}`);
+      setShowDeleteConfirm(false);
+      setShowEditModal(false);
+      await loadAllData();
+      setToast({ show: true, message: 'Pointage supprimé avec succès !', variant: 'success' });
+    } catch (err) {
+      setToast({ show: true, message: 'Erreur lors de la suppression', variant: 'danger' });
+    }
+  };
+
+const generatePDF = () => {  const doc = new jsPDF();
+  doc.addFileToVFS('amiri.ttf', amiriFont);
+  doc.addFont('amiri.ttf', 'amiri', 'normal');
+
+  const logoUrl = '/logo.jpg';
+  try { doc.addImage(logoUrl, 'JPG', 14, 10, 25, 25); } catch(e){}
+
+  doc.setFont("amiri", "normal");
   doc.setFontSize(18);
   doc.text("GIL JAKAN", 45, 18);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.setFontSize(10);
   doc.text("ALUMINIUM & MENUISERIE", 45, 24);
 
   doc.setDrawColor(200);
   doc.line(14, 35, 196, 35);
 
-  /* ───── EMPLOYEE INFO ───── */
+  /* ───── INFO OUVRIER ───── */
 
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Employé :", 14, 45);
-  doc.text("Période :", 14, 52);
+  doc.setFont("amiri", "normal");
+  doc.text("FICHE DE PAIE :", 14, 45);
+  doc.text("PÉRIODE :", 14, 52);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.text(workerData?.name?.toUpperCase() || "-", 45, 45);
-  doc.text(`11/${(month - 1) || 12} au 10/${month}/${year}`, 45, 52);
+  const endD = new Date(year, month, 0);
+  const lastDay = endD.getDate();
+  doc.text(`01/${month}/${year} au ${lastDay}/${month}/${year}`, 45, 52);
 
   /* ───── ATTENDANCE TABLE ───── */
 
   autoTable(doc, {
     startY: 60,
-    head: [["Date", "Statut", "Bonus déplacement"]],
-    body: dateRange.map((d) => {
-      const r = days.find((x) => x.date === d);
-      return [
-        d,
-        r?.status?.toUpperCase() || "ABSENT",
-        r?.displacement ? "OUI (+0.5)" : "-",
-      ];
-    }),
-    theme: "grid",
-    headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: 0,
-    },
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-    },
+    head: [['Date', 'Statut', 'Déplacement']],
+    body: days.map(d => [
+      d.date, 
+      d.status === 'full' ? 'Présent' : d.status === 'half' ? 'Demi-jour' : 'Absent',
+      d.displacement ? 'Oui' : 'Non'
+    ]),
+    theme: 'grid',
+    headStyles: { fillColor: [240,240,240], textColor: 0, font: 'amiri' },
+    styles: { fontSize: 9, font: 'amiri' }
   });
 
-  /* ───── SALARY SUMMARY ───── */
+  /* ───── RÉCAP ───── */
+  let finalY = doc.lastAutoTable.finalY + 15;
 
-  const finalY = doc.lastAutoTable.finalY + 15;
-
-  doc.setFont("helvetica", "bold");
+  doc.setFont("amiri", "normal");
   doc.setFontSize(12);
-  doc.text("Résumé de la paie", 140, finalY);
+  doc.text("Récapitulatif Financier", 140, finalY);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
+  doc.setFontSize(10);
+  doc.text("Total Brut :", 120, finalY + 10);
+  doc.text(`${stats.brut} DH`, 190, finalY + 10, { align: 'right' });
 
-  doc.text("Total brut :", 120, finalY + 10);
-  doc.text(`${stats.brut} DH`, 190, finalY + 10, { align: "right" });
+  doc.text("Total Acomptes :", 120, finalY + 18);
+  doc.text(`${stats.advances} DH`, 190, finalY + 18, { align: 'right' });
 
-  doc.text("Acomptes :", 120, finalY + 18);
-  doc.text(`-${stats.advances} DH`, 190, finalY + 18, { align: "right" });
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Net à payer :", 120, finalY + 28);
-  doc.text(`${stats.net} DH`, 190, finalY + 28, { align: "right" });
+  doc.setFont("amiri", "bold");
+  doc.text("Net à Payer :", 120, finalY + 28);
+  doc.text(`${stats.net} DH`, 190, finalY + 28, { align: 'right' });
 
   /* ───── FOOTER ───── */
-
   doc.setDrawColor(200);
   doc.line(14, 285, 196, 285);
-
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("amiri", "normal");
   doc.text(
     "Document généré par le système de gestion GIL JAKAN",
     105,
@@ -169,13 +206,17 @@ const generatePDF = () => {
         {/* ── CALENDAR ── */}
         <Col lg={8}>
           <Card className="jakan-card p-4 h-100 shadow-sm border-0">
-            <h5 className="fw-bold mb-4 jakan-title">Pointage du Cycle (11 au 10)</h5>
+            <h5 className="fw-bold mb-4 jakan-title">Pointage Mensuel</h5>
             <div className="jakan-calendar-grid">
               {dateRange.map((dateStr, i) => {
                 const record = days.find(d => d.date === dateStr);
                 const dayLabel = dateStr.split('-')[2];
                 return (
-                  <div key={i} className={`day-card ${!record ? 'absent' : ''} ${record?.status}`}>
+                  <div 
+                    key={i} 
+                    className={`day-card ${!record ? 'missing' : record.status} ${!stats.isPaid ? 'editable' : ''}`}
+                    onClick={() => handleDayClick(dateStr, record)}
+                  >
                     <span className="day-label">JOUR</span>
                     <span className="day-number">{dayLabel}</span>
                     {record?.displacement && <div className="bg-info rounded-circle mt-1" style={{width:6,height:6}}/>}
@@ -213,7 +254,7 @@ const generatePDF = () => {
                   <CheckCircle size={20} className="me-2"/> SALAIRE RÉGLÉ
                 </div>
               ) : (
-                <Button className="btn-jakan-light w-100 mt-4 shadow" onClick={() => setShowAdvanceModal(true)}>
+                <Button className="btn-acompte-pro w-100 mt-4 shadow" onClick={() => setShowAdvanceModal(true)}>
                   <PlusCircle size={20} className="me-2"/> AJOUTER ACOMPTE
                 </Button>
               )}
@@ -226,6 +267,88 @@ const generatePDF = () => {
         <Modal.Body className="text-center pt-0">
             <Form.Control type="number" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className="fs-2 fw-bold text-center border-0 bg-light py-3 text-dark" placeholder="0" autoFocus />
             <Button variant="primary" className="w-100 fw-bold mt-3 py-2 shadow-sm" onClick={handleAddAdvance}>VALIDER L'AVANCE</Button>
+        </Modal.Body>
+      </Modal>
+
+      {/* ── ATTENDANCE EDIT MODAL ── */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="sm">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fs-6 fw-bold jakan-title text-dark">
+            Pointage du {selectedDay && new Date(selectedDay.date).toLocaleDateString('fr-FR')}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-3">
+          <Form.Group className="mb-3">
+            <Form.Label className="small fw-bold text-muted uppercase">Statut du Jour</Form.Label>
+            <div className="d-flex justify-content-center gap-2">
+              <Button 
+                className={editStatus === 'full' ? 'btn-status shadow-sm' : 'btn-status btn-status-outline'}
+                variant={editStatus === 'full' ? 'success' : ''} 
+                onClick={() => setEditStatus('full')}
+              >
+                Plein
+              </Button>
+              <Button 
+                className={editStatus === 'half' ? 'btn-status shadow-sm' : 'btn-status btn-status-outline'}
+                variant={editStatus === 'half' ? 'warning' : ''} 
+                onClick={() => setEditStatus('half')}
+              >
+                Demi
+              </Button>
+              <Button 
+                className={editStatus === 'absent' ? 'btn-status shadow-sm' : 'btn-status btn-status-outline'}
+                variant={editStatus === 'absent' ? 'danger' : ''} 
+                onClick={() => {
+                  setEditStatus('absent');
+                  setEditDisplacement(false);
+                }}
+              >
+                Absent
+              </Button>
+            </div>
+          </Form.Group>
+
+          <Form.Group className="mb-4">
+            <Form.Check 
+              type="switch"
+              id="displacement-switch"
+              label="Déplacement (Site)"
+              checked={editDisplacement}
+              disabled={editStatus === 'absent'}
+              onChange={(e) => setEditDisplacement(e.target.checked)}
+              className="fw-bold"
+            />
+          </Form.Group>
+
+          <Button variant="primary" className="w-100 fw-bold py-2 shadow-sm" onClick={handleUpdateAttendance}>
+            ENREGISTRER
+          </Button>
+
+          <Button variant="outline-danger" className="w-100 fw-bold py-2 mt-2 border-0" onClick={handleDeleteAttendance}>
+            SUPPRIMER LE POINTAGE
+          </Button>
+        </Modal.Body>
+      </Modal>
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      <Modal show={showDeleteConfirm} onHide={() => setShowDeleteConfirm(false)} centered size="sm">
+        <Modal.Body className="text-center p-4">
+          <div className="text-danger mb-3 mt-2">
+            <XCircle size={54} strokeWidth={1.5} />
+          </div>
+          <h4 className="jakan-title mb-2">Supprimer le Pointage ?</h4>
+          <p className="text-muted small">
+            Voulez-vous vraiment retirer la présence du <br />
+            <strong className="text-dark">{selectedDay && new Date(selectedDay.date).toLocaleDateString('fr-FR')}</strong> ?
+          </p>
+          <div className="d-grid gap-2 mt-4">
+            <Button variant="danger" className="fw-bold py-2 shadow-sm" onClick={confirmDelete}>
+              OUI, SUPPRIMER
+            </Button>
+            <Button variant="link" className="text-muted text-decoration-none small" onClick={() => setShowDeleteConfirm(false)}>
+              Annuler
+            </Button>
+          </div>
         </Modal.Body>
       </Modal>
 
