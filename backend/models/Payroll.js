@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const PayrollSchema = new mongoose.Schema({
-  workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   month: { type: Number, required: true }, // 1-12
   year: { type: Number, required: true },
   totalDays: Number,     // Total 'Full' + 'Half' counts

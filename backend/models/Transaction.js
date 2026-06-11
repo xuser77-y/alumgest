@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const TransactionSchema = new mongoose.Schema({
-  type: { type: String, enum: ['plus', 'minus'], required: true },
+  type: { type: String, enum: ['plus', 'minus', 'neutral'], required: true },
   category: { type: String, required: true },
   projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
   amount: { type: Number, required: true },

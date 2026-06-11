@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Badge, Modal, Form, Toast, ToastContainer } from 'react-bootstrap';
-import { ArrowLeft, Plus, DollarSign, FileText, ShoppingCart, Truck } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, FileText, ShoppingCart, Truck, CreditCard, Edit3, Trash2, CheckCircle, XCircle, Lock, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,12 +15,24 @@ const FournisseurDetails = () => {
   
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showChequeModal, setShowChequeModal] = useState(false);
+  const [showRemiseModal, setShowRemiseModal] = useState(false);
+  const [showEditHistoryModal, setShowEditHistoryModal] = useState(false);
+  const [showDeleteHistoryModal, setShowDeleteHistoryModal] = useState(false);
+  const [showPayChequeModal, setShowPayChequeModal] = useState(false);
   
   const [toast, setToast] = useState({ show: false, message: '', bg: 'success' });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: '', message: '', action: null });
   
   const [formData, setFormData] = useState({ amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+  const [selectedHistory, setSelectedHistory] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const [filterType, setFilterType] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+  const [filterMonth, setFilterMonth] = useState('all');
 
   const showToast = (message, bg = 'success') => setToast({ show: true, message, bg });
 
@@ -89,6 +101,105 @@ const FournisseurDetails = () => {
     }
   };
 
+  const executeCheque = async () => {
+    try {
+      await api.post(`/fournisseurs/${id}/cheque`, formData);
+      setShowChequeModal(false);
+      setFormData({ amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+      fetchDetails();
+      showToast("Chèque enregistré avec succès (Non payé).", "warning");
+    } catch (err) {
+      console.error(err);
+      showToast("Erreur lors de l'ajout du chèque.", "danger");
+    }
+  };
+
+  const handleAddRemise = (e) => {
+    e.preventDefault();
+    setConfirmConfig({
+      title: "Confirmer la Remise",
+      message: `Êtes-vous sûr de vouloir enregistrer cette remise de ${formData.amount} DH ? Cela n'affectera pas la caisse globale.`,
+      action: executeRemise
+    });
+    setShowConfirmModal(true);
+  };
+
+  const executeRemise = async () => {
+    try {
+      await api.post(`/fournisseurs/${id}/remise`, formData);
+      setShowRemiseModal(false);
+      setShowConfirmModal(false);
+      setFormData({ amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+      fetchDetails();
+      showToast("Remise enregistrée avec succès.");
+    } catch (err) {
+      console.error(err);
+      showToast("Erreur lors de l'ajout de la remise.", "danger");
+      setShowConfirmModal(false);
+    }
+  };
+
+  const handlePayCheque = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post(`/fournisseurs/history/${selectedHistory._id}/pay`, { password: adminPassword });
+      setShowPayChequeModal(false);
+      setAdminPassword('');
+      fetchDetails();
+      showToast("Chèque marqué comme payé.", "success");
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Erreur lors du paiement');
+    }
+  };
+
+  const handleEditHistory = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/fournisseurs/history/${selectedHistory._id}`, { ...formData });
+      setShowEditHistoryModal(false);
+      setAdminPassword('');
+      fetchDetails();
+      showToast("Historique modifié avec succès.", "success");
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Erreur lors de la modification');
+    }
+  };
+
+  const handleDeleteHistory = async (e) => {
+    e.preventDefault();
+    try {
+      await api.delete(`/fournisseurs/history/${selectedHistory._id}`);
+      setShowDeleteHistoryModal(false);
+      setAdminPassword('');
+      fetchDetails();
+      showToast("Historique supprimé.", "success");
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Erreur lors de la suppression');
+    }
+  };
+
+  const openEditModal = (h) => {
+    setSelectedHistory(h);
+    setFormData({ amount: h.amount, description: h.description, date: new Date(h.date).toISOString().split('T')[0] });
+    setAdminPassword('');
+    setErrorMsg('');
+    setShowEditHistoryModal(true);
+  };
+
+  const openDeleteModal = (h) => {
+    setSelectedHistory(h);
+    setAdminPassword('');
+    setErrorMsg('');
+    setShowDeleteHistoryModal(true);
+  };
+
+  const openPayChequeModal = (h) => {
+    setSelectedHistory(h);
+    setAdminPassword('');
+    setErrorMsg('');
+    setShowPayChequeModal(true);
+  };
+
   const generatePDF = () => {
     if (!fournisseur) return;
     const doc = new jsPDF();
@@ -118,9 +229,9 @@ const FournisseurDetails = () => {
     autoTable(doc, {
       startY: 60,
       head: [["Date", "Type", "Désignation", "Montant"]],
-      body: history.map((h) => [
+      body: filteredHistory.map((h) => [
         new Date(h.date).toLocaleDateString("fr-FR"),
-        h.type === 'purchase' ? 'Achat' : 'Paiement',
+        h.type === 'purchase' ? 'Achat' : h.type === 'payment' ? 'Paiement' : h.type === 'remise' ? 'Remise' : 'Chèque',
         h.description || '-',
         `${h.amount.toLocaleString()} DH`,
       ]),
@@ -155,6 +266,24 @@ const FournisseurDetails = () => {
   if (!fournisseur) return <div className="p-4 text-center">Chargement...</div>;
 
   const restToPay = fournisseur.totalBought - fournisseur.totalPaid;
+
+  const availableYears = [...new Set(history.map(h => new Date(h.date).getFullYear().toString()))].sort();
+  const availableMonths = [...new Set(history.map(h => (new Date(h.date).getMonth() + 1).toString()))].sort((a,b) => Number(a) - Number(b));
+
+  const filteredHistory = history.filter(h => {
+    const d = new Date(h.date);
+    const hYear = d.getFullYear().toString();
+    const hMonth = (d.getMonth() + 1).toString();
+    
+    let typeMatch = true;
+    if (filterType === 'achat') typeMatch = h.type === 'purchase';
+    if (filterType === 'paiement') typeMatch = (h.type === 'payment' || h.type === 'cheque' || h.type === 'remise');
+    
+    let yearMatch = filterYear === 'all' || filterYear === hYear;
+    let monthMatch = filterMonth === 'all' || filterMonth === hMonth;
+    
+    return typeMatch && yearMatch && monthMatch;
+  });
 
   return (
     <Container fluid className="py-4">
@@ -204,11 +333,39 @@ const FournisseurDetails = () => {
           <Button variant="outline-primary" className="fw-bold" onClick={() => setShowPurchaseModal(true)}>
             + Ajouter Achat
           </Button>
+          <Button variant="warning" className="fw-bold text-dark" onClick={() => setShowChequeModal(true)}>
+            + Ajouter Chèque
+          </Button>
+          <Button variant="info" className="fw-bold text-white" onClick={() => setShowRemiseModal(true)}>
+            + Ajouter Remise
+          </Button>
           <Button variant="success" className="fw-bold text-white" onClick={() => setShowPaymentModal(true)}>
             + Ajouter Paiement
           </Button>
         </div>
       </div>
+
+      <Row className="mb-3">
+        <Col md={4}>
+          <Form.Select value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <option value="all">Tous les types</option>
+            <option value="achat">Achats</option>
+            <option value="paiement">Paiements / Chèques / Remises</option>
+          </Form.Select>
+        </Col>
+        <Col md={4}>
+          <Form.Select value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+            <option value="all">Toutes les années</option>
+            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+          </Form.Select>
+        </Col>
+        <Col md={4}>
+          <Form.Select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+            <option value="all">Tous les mois</option>
+            {availableMonths.map(m => <option key={m} value={m}>Mois {m}</option>)}
+          </Form.Select>
+        </Col>
+      </Row>
 
       <div className="jakan-table shadow-sm bg-body border rounded-4 overflow-hidden">
         <Table hover responsive className="m-0 align-middle">
@@ -218,13 +375,14 @@ const FournisseurDetails = () => {
               <th>Type</th>
               <th>Désignation</th>
               <th className="text-end pe-4">Montant</th>
+              <th className="text-end pe-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {history.length === 0 ? (
-              <tr><td colSpan="4" className="text-center p-5 text-muted">Aucun historique.</td></tr>
+            {filteredHistory.length === 0 ? (
+              <tr><td colSpan="5" className="text-center p-5 text-muted">Aucun historique trouvé pour ces filtres.</td></tr>
             ) : (
-              [...history].sort((a, b) => {
+              [...filteredHistory].sort((a, b) => {
                 const dateA = new Date(a.date);
                 const dateB = new Date(b.date);
                 if (dateB - dateA !== 0) return dateB - dateA;
@@ -234,13 +392,31 @@ const FournisseurDetails = () => {
                 <tr key={h._id}>
                   <td className="ps-4 fw-bold text-muted">{new Date(h.date).toLocaleDateString('fr-FR')}</td>
                   <td>
-                    <Badge bg={h.type === 'purchase' ? 'secondary' : 'success'} className="px-2 py-1">
-                      {h.type === 'purchase' ? 'ACHAT' : 'PAIEMENT'}
+                    <Badge bg={h.type === 'purchase' ? 'secondary' : h.type === 'payment' ? 'success' : h.type === 'remise' ? 'info' : 'warning'} className={`px-2 py-1 ${(h.type === 'cheque' || h.type === 'remise') ? 'text-dark' : ''}`}>
+                      {h.type === 'purchase' ? 'ACHAT' : h.type === 'payment' ? 'PAIEMENT' : h.type === 'remise' ? 'REMISE' : 'CHÈQUE'}
                     </Badge>
+                    {h.type === 'cheque' && !h.isPaid && (
+                      <Badge bg="danger" className="ms-2 px-2 py-1 cursor-pointer" style={{ cursor: 'pointer' }} onClick={() => openPayChequeModal(h)}>
+                        Non Payé
+                      </Badge>
+                    )}
+                    {h.type === 'cheque' && h.isPaid && (
+                      <Badge bg="success" className="ms-2 px-2 py-1">
+                        Payé
+                      </Badge>
+                    )}
                   </td>
                   <td>{h.description || '-'}</td>
-                  <td className={`text-end pe-4 fw-bold ${h.type === 'payment' ? 'text-success' : ''}`}>
+                  <td className={`text-end pe-4 fw-bold ${(h.type === 'payment' || h.type === 'remise' || (h.type === 'cheque' && h.isPaid)) ? 'text-success' : ''}`}>
                     {h.amount.toLocaleString()} DH
+                  </td>
+                  <td className="text-end pe-4">
+                    <Button variant="link" className="p-0 text-primary me-2" onClick={() => openEditModal(h)}>
+                      <Edit3 size={18} />
+                    </Button>
+                    <Button variant="link" className="p-0 text-danger" onClick={() => openDeleteModal(h)}>
+                      <Trash2 size={18} />
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -298,6 +474,137 @@ const FournisseurDetails = () => {
             <Button type="submit" variant="success" className="w-100 fw-bold py-2 text-white">Enregistrer Le Paiement</Button>
           </Form>
         </Modal.Body>
+      </Modal>
+
+      {/* Modal Cheque */}
+      <Modal show={showChequeModal} onHide={() => setShowChequeModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-warning d-flex align-items-center gap-2"><CreditCard size={20}/> Nouveau Chèque</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-warning py-2 small mb-3 text-dark">
+            Ce chèque sera enregistré comme "Non payé" et ne sera pas déduit de la caisse avant d'être marqué comme payé.
+          </div>
+          <Form onSubmit={(e) => { e.preventDefault(); executeCheque(); }}>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Montant (DH) *</Form.Label>
+              <Form.Control type="number" required value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Désignation (Chèque N°...)</Form.Label>
+              <Form.Control type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="small fw-bold text-muted">Date</Form.Label>
+              <Form.Control type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            </Form.Group>
+            <Button type="submit" variant="warning" className="w-100 fw-bold py-2 text-dark">Enregistrer Le Chèque</Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Remise */}
+      <Modal show={showRemiseModal} onHide={() => setShowRemiseModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-info d-flex align-items-center gap-2"><Plus size={20}/> Nouvelle Remise</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="alert alert-info py-2 small mb-3">
+            Cette remise réduira le reste à payer du fournisseur sans affecter la caisse principale.
+          </div>
+          <Form onSubmit={handleAddRemise}>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Montant (DH) *</Form.Label>
+              <Form.Control type="number" required value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Désignation (Ex: Geste commercial, Escompte...)</Form.Label>
+              <Form.Control type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="small fw-bold text-muted">Date</Form.Label>
+              <Form.Control type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            </Form.Group>
+            <Button type="submit" variant="info" className="w-100 fw-bold py-2 text-white">Enregistrer La Remise</Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Edit History */}
+      <Modal show={showEditHistoryModal} onHide={() => setShowEditHistoryModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-primary d-flex align-items-center gap-2"><Edit3 size={20}/> Modifier Historique</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {errorMsg && <div className="alert alert-danger py-2 small mb-3">{errorMsg}</div>}
+          <Form onSubmit={handleEditHistory}>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Montant (DH) *</Form.Label>
+              <Form.Control type="number" required value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Désignation</Form.Label>
+              <Form.Control type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="small fw-bold text-muted">Date</Form.Label>
+              <Form.Control type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            </Form.Group>
+            <Button type="submit" variant="primary" className="w-100 fw-bold py-2">Enregistrer les Modifications</Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Delete History */}
+      <Modal show={showDeleteHistoryModal} onHide={() => setShowDeleteHistoryModal(false)} centered size="sm">
+        <Form onSubmit={handleDeleteHistory}>
+          <Modal.Body className="text-center p-4">
+            <div className="text-danger mb-3 mt-2">
+              <Trash2 size={54} strokeWidth={1.5} />
+            </div>
+            <h4 className="fw-bold mb-2">Supprimer ?</h4>
+            <p className="text-muted small">
+              Voulez-vous vraiment supprimer cette opération ?
+            </p>
+            {errorMsg && <div className="alert alert-danger py-2 small mb-3">{errorMsg}</div>}
+            <div className="d-grid gap-2 mt-4">
+              <Button type="submit" variant="danger" className="fw-bold py-2 shadow-sm">
+                OUI, SUPPRIMER
+              </Button>
+              <Button variant="link" className="text-muted text-decoration-none small" onClick={() => setShowDeleteHistoryModal(false)}>
+                Annuler
+              </Button>
+            </div>
+          </Modal.Body>
+        </Form>
+      </Modal>
+
+      {/* Modal Pay Cheque */}
+      <Modal show={showPayChequeModal} onHide={() => setShowPayChequeModal(false)} centered size="sm">
+        <Form onSubmit={handlePayCheque}>
+          <Modal.Body className="text-center p-4">
+            <div className="text-success mb-3 mt-2">
+              <CheckCircle size={54} strokeWidth={1.5} />
+            </div>
+            <h4 className="fw-bold mb-2 text-success">Valider Chèque</h4>
+            <p className="text-muted small">
+              En validant, le montant sera déduit de la caisse.
+            </p>
+            {errorMsg && <div className="alert alert-danger py-2 small mb-3">{errorMsg}</div>}
+            <Form.Group className="mb-4 text-start">
+              <Form.Label className="small fw-bold text-danger d-flex align-items-center gap-2"><Lock size={16}/> Mot de passe Admin</Form.Label>
+              <Form.Control type="password" required value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
+            </Form.Group>
+            <div className="d-grid gap-2 mt-4">
+              <Button type="submit" variant="success" className="fw-bold py-2 shadow-sm text-white">
+                MARQUER COMME PAYÉ
+              </Button>
+              <Button variant="link" className="text-muted text-decoration-none small" onClick={() => setShowPayChequeModal(false)}>
+                Annuler
+              </Button>
+            </div>
+          </Modal.Body>
+        </Form>
       </Modal>
 
       {/* Modal Confirm */}

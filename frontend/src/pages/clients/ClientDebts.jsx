@@ -14,6 +14,7 @@ const ClientDebts = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', variant: 'success' });
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,14 @@ const ClientDebts = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [debtToDelete, setDebtToDelete] = useState(null);
 
+  // Payment edit/delete states
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
+  const [showDeletePaymentModal, setShowDeletePaymentModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({ amount: '', note: '', date: '' });
+
   // Form states
+  const [editDebtForm, setEditDebtForm] = useState({ totalAmount: '', notes: '', createdAt: '' });
   const [newDebt, setNewDebt] = useState({ 
     client: '', 
     totalAmount: '', 
@@ -40,6 +48,12 @@ const ClientDebts = () => {
       setDebts(resDebts.data);
       setClients(resClients.data);
       setLoading(false);
+
+      // Keep active debt selected with fresh data so history updates in real-time
+      setSelectedDebt(prev => {
+        if (!prev) return null;
+        return resDebts.data.find(d => d._id === prev._id) || prev;
+      });
     } catch (err) { console.error(err); }
   };
 
@@ -78,6 +92,28 @@ const ClientDebts = () => {
     setShowDeleteModal(true);
   };
 
+  const handleEditClick = (debt) => {
+    setSelectedDebt(debt);
+    setEditDebtForm({
+      totalAmount: debt.totalAmount,
+      notes: debt.notes || '',
+      createdAt: new Date(debt.createdAt).toISOString().split('T')[0]
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateDebt = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/debts/${selectedDebt._id}`, editDebtForm);
+      setShowEditModal(false);
+      fetchData();
+      setToast({ show: true, message: 'Dette modifiée avec succès', variant: 'success' });
+    } catch (err) {
+      setToast({ show: true, message: 'Erreur lors de la modification', variant: 'danger' });
+    }
+  };
+
   const confirmDeleteDebt = async () => {
     try {
       await api.delete(`/debts/${debtToDelete}`);
@@ -88,6 +124,48 @@ const ClientDebts = () => {
     } catch (err) { 
         console.error(err);
         setToast({ show: true, message: 'Erreur lors de la suppression', variant: 'danger' });
+    }
+  };
+
+  const handleEditPaymentClick = (payment) => {
+    setSelectedPayment(payment);
+    setEditPaymentForm({
+      amount: payment.amount,
+      note: payment.note || '',
+      date: new Date(payment.date).toISOString().split('T')[0]
+    });
+    setShowEditPaymentModal(true);
+  };
+
+  const handleUpdatePayment = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/debts/${selectedDebt._id}/payment/${selectedPayment._id}`, editPaymentForm);
+      setShowEditPaymentModal(false);
+      setSelectedPayment(null);
+      fetchData();
+      setToast({ show: true, message: 'Paiement modifié avec succès', variant: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ show: true, message: 'Erreur lors de la modification du paiement', variant: 'danger' });
+    }
+  };
+
+  const handleDeletePaymentClick = (payment) => {
+    setSelectedPayment(payment);
+    setShowDeletePaymentModal(true);
+  };
+
+  const confirmDeletePayment = async () => {
+    try {
+      await api.delete(`/debts/${selectedDebt._id}/payment/${selectedPayment._id}`);
+      setShowDeletePaymentModal(false);
+      setSelectedPayment(null);
+      fetchData();
+      setToast({ show: true, message: 'Paiement supprimé avec succès', variant: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ show: true, message: 'Erreur lors de la suppression du paiement', variant: 'danger' });
     }
   };
 
@@ -279,10 +357,13 @@ const ClientDebts = () => {
                     <Button variant="jakan-light" className="flex-grow-1 fw-bold shadow-sm" onClick={() => { setSelectedDebt(debt); setShowPaymentModal(true); }}>
                         ENCAISSER
                     </Button>
-                    <Button variant="outline-secondary" size="sm" className="px-3" onClick={() => { setSelectedDebt(debt); setShowHistoryModal(true); }}>
+                    <Button variant="outline-secondary" size="sm" className="px-2" onClick={() => { setSelectedDebt(debt); setShowHistoryModal(true); }}>
                         <Clock size={16}/>
                     </Button>
-                    <Button variant="outline-danger" size="sm" className="border-0 bg-danger bg-opacity-10" onClick={() => handleDeleteClick(debt._id)}>
+                    <Button variant="outline-primary" size="sm" className="px-2" onClick={() => handleEditClick(debt)}>
+                        <Edit size={16}/>
+                    </Button>
+                    <Button variant="outline-danger" size="sm" className="px-2 border-0 bg-danger bg-opacity-10" onClick={() => handleDeleteClick(debt._id)}>
                         <Trash2 size={16} className="text-danger"/>
                     </Button>
                   </div>
@@ -409,8 +490,16 @@ const ClientDebts = () => {
                             <div>
                                 <div className="fw-bold text-success">+{p.amount} DH</div>
                                 <div className="x-small text-muted">{new Date(p.date).toLocaleDateString('fr-FR')}</div>
+                                <div className="small text-muted italic">{p.note || 'Paiement direct'}</div>
                             </div>
-                            <div className="small text-muted italic">{p.note || 'Paiement direct'}</div>
+                            <div className="d-flex gap-2">
+                                <Button variant="outline-primary" size="sm" className="px-2 py-1" onClick={() => handleEditPaymentClick(p)}>
+                                    <Edit size={14} />
+                                </Button>
+                                <Button variant="outline-danger" size="sm" className="px-2 py-1 border-0 bg-danger bg-opacity-10 text-danger" onClick={() => handleDeletePaymentClick(p)}>
+                                    <Trash2 size={14} />
+                                </Button>
+                            </div>
                         </div>
                     ))}
                     <div className="mt-4 p-3 bg-jakan bg-opacity-10 rounded-3 text-center border border-primary border-opacity-25">
@@ -432,15 +521,78 @@ const ClientDebts = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* EDIT DEBT MODAL */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="md">
+        <Modal.Header closeButton><Modal.Title className="jakan-title">Modifier Dette</Modal.Title></Modal.Header>
+        <Form onSubmit={handleUpdateDebt}>
+          <Modal.Body className="p-4">
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Nouveau Montant Total (DH)</Form.Label>
+              <Form.Control type="number" required value={editDebtForm.totalAmount} onChange={e => setEditDebtForm({...editDebtForm, totalAmount: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Date de la Dette</Form.Label>
+              <Form.Control type="date" required value={editDebtForm.createdAt} onChange={e => setEditDebtForm({...editDebtForm, createdAt: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Notes / Commentaires</Form.Label>
+              <Form.Control as="textarea" rows={2} value={editDebtForm.notes} onChange={e => setEditDebtForm({...editDebtForm, notes: e.target.value})} />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="light" onClick={() => setShowEditModal(false)}>Annuler</Button>
+            <Button variant="primary" type="submit" className="fw-bold px-4">ENREGISTRER</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
       {/* DELETE CONFIRMATION MODAL */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Body className="p-4 text-center">
             <AlertTriangle size={50} className="text-danger mb-3" />
             <h4 className="fw-bold">Supprimer ?</h4>
-            <p className="small text-muted">Voulez-vous vraiment supprimer cette dette ? Cette action est irréversible.</p>
+            <p className="small text-muted">Voulez-vous vraiment supprimer cette dette ? Cette action est irréversible et supprimera également toutes les traces d'encaissement associées dans la caisse principale.</p>
             <div className="d-grid gap-2 mt-4">
                 <Button variant="danger" className="fw-bold py-2" onClick={confirmDeleteDebt}>OUI, SUPPRIMER</Button>
                 <Button variant="light" className="fw-bold text-muted" onClick={() => setShowDeleteModal(false)}>Annuler</Button>
+            </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* EDIT PAYMENT MODAL */}
+      <Modal show={showEditPaymentModal} onHide={() => { setShowEditPaymentModal(false); setSelectedPayment(null); }} centered size="md">
+        <Modal.Header closeButton><Modal.Title className="jakan-title">Modifier Paiement</Modal.Title></Modal.Header>
+        <Form onSubmit={handleUpdatePayment}>
+          <Modal.Body className="p-4">
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Montant (DH)</Form.Label>
+              <Form.Control type="number" required value={editPaymentForm.amount} onChange={e => setEditPaymentForm({...editPaymentForm, amount: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Date</Form.Label>
+              <Form.Control type="date" required value={editPaymentForm.date} onChange={e => setEditPaymentForm({...editPaymentForm, date: e.target.value})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Note</Form.Label>
+              <Form.Control type="text" value={editPaymentForm.note} onChange={e => setEditPaymentForm({...editPaymentForm, note: e.target.value})} />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="light" onClick={() => { setShowEditPaymentModal(false); setSelectedPayment(null); }}>Annuler</Button>
+            <Button variant="primary" type="submit" className="fw-bold px-4">ENREGISTRER</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* DELETE PAYMENT CONFIRMATION MODAL */}
+      <Modal show={showDeletePaymentModal} onHide={() => { setShowDeletePaymentModal(false); setSelectedPayment(null); }} centered size="sm">
+        <Modal.Body className="p-4 text-center">
+            <AlertTriangle size={50} className="text-danger mb-3" />
+            <h4 className="fw-bold">Supprimer le paiement ?</h4>
+            <p className="small text-muted">Voulez-vous vraiment supprimer ce paiement de {selectedPayment?.amount} DH ? Cette action supprimera également ce montant de la caisse principale.</p>
+            <div className="d-grid gap-2 mt-4">
+                <Button variant="danger" className="fw-bold py-2" onClick={confirmDeletePayment}>OUI, SUPPRIMER</Button>
+                <Button variant="light" className="fw-bold text-muted" onClick={() => { setShowDeletePaymentModal(false); setSelectedPayment(null); }}>Annuler</Button>
             </div>
         </Modal.Body>
       </Modal>

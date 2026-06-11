@@ -180,8 +180,8 @@ const WorkerProfile = () => {
                     <td className="small text-muted">{new Date(tr.date).toLocaleDateString()}</td>
                     <td><Badge bg="secondary bg-opacity-10" className="text-secondary">{tr.category}</Badge></td>
                     <td className="small">{tr.description}</td>
-                    <td className={`fw-bold ${tr.type === 'plus' ? 'text-success' : 'text-danger'}`}>
-                      {tr.type === 'plus' ? '+' : '-'}{tr.amount} DH
+                    <td className={`fw-bold ${tr.type === 'plus' ? 'text-success' : tr.type === 'neutral' ? 'text-warning' : 'text-danger'}`}>
+                      {tr.type === 'plus' ? '+' : tr.type === 'neutral' ? '' : '-'}{tr.amount} DH
                     </td>
                     <td>
                       {tr.category === 'Avance' ? (

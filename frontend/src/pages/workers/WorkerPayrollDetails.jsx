@@ -34,6 +34,13 @@ const WorkerPayrollDetails = () => {
   };
   const dateRange = getRange();
 
+  const getPaddingStart = () => {
+    const firstDay = new Date(Date.UTC(year, month - 1, 1));
+    const dayOfWeek = firstDay.getUTCDay();
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  };
+  const paddingStart = getPaddingStart();
+
   const loadAllData = async () => {
     try {
       const [resDays, resStats] = await Promise.all([
@@ -208,6 +215,19 @@ const generatePDF = () => {  const doc = new jsPDF();
           <Card className="jakan-card p-4 h-100 shadow-sm border-0">
             <h5 className="fw-bold mb-4 jakan-title">Pointage Mensuel</h5>
             <div className="jakan-calendar-grid">
+              {/* Day of the week headers */}
+              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d, index) => (
+                <div key={`header-${index}`} className="weekday-header">
+                  {d}
+                </div>
+              ))}
+              
+              {/* Padding cells for start of month */}
+              {Array.from({ length: paddingStart }).map((_, i) => (
+                <div key={`pad-${i}`} className="day-card empty" />
+              ))}
+
+              {/* Active month days */}
               {dateRange.map((dateStr, i) => {
                 const record = days.find(d => d.date === dateStr);
                 const dayLabel = dateStr.split('-')[2];

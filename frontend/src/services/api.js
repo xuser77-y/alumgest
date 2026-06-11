@@ -33,6 +33,13 @@ api.interceptors.response.use(
     if (activeRequests === 0) {
       document.body.classList.remove('loading');
     }
+
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+
     return Promise.reject(error);
   }
 );

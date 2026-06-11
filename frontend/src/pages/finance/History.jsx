@@ -24,7 +24,7 @@ const History = () => {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
-  const loadData = async () => {
+  const loadData = async (resetPage = true) => {
     try {
       const queryString = `type=${filters.type}&category=${encodeURIComponent(filters.category)}&year=${filters.year}&month=${filters.month}&search=${filters.search}`;
       const [resTrans, resCats, resYears] = await Promise.all([
@@ -35,7 +35,13 @@ const History = () => {
       setTransactions(resTrans.data);
       setUniqueCats(resCats.data);
       setYears(resYears.data);
-      setCurrentPage(1); 
+      
+      if (resetPage) {
+        setCurrentPage(1); 
+      } else {
+        const newTotalPages = Math.ceil(resTrans.data.length / itemsPerPage) || 1;
+        setCurrentPage(prev => prev > newTotalPages ? newTotalPages : prev);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -55,7 +61,7 @@ const History = () => {
     try {
       await api.put(`/transactions/${selectedTransaction._id}`, editForm);
       setShowEditModal(false);
-      loadData();
+      loadData(false);
       setToast({ show: true, message: 'Transaction mise à jour !', variant: 'success' });
     } catch (err) {
       setToast({ show: true, message: 'Erreur lors de la mise à jour', variant: 'danger' });
@@ -77,7 +83,7 @@ const History = () => {
         data: { password: deletePassword }
       });
       setShowDeleteModal(false);
-      loadData();
+      loadData(false);
       setToast({ show: true, message: 'Transaction supprimée !', variant: 'success' });
     } catch (err) {
       const msg = err.response?.data?.message || 'Erreur lors de la suppression';
@@ -86,7 +92,7 @@ const History = () => {
     }
   };
 
-  useEffect(() => { loadData(); }, [filters]);
+  useEffect(() => { loadData(true); }, [filters]);
 
   // ── PAGINATION LOGIC ──
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
@@ -143,7 +149,7 @@ const History = () => {
         new Date(t.date).toLocaleDateString("fr-FR"),
         t.category.toUpperCase(),
         t.description,
-        `${t.type === "plus" ? "+" : "-"}${t.amount} DH`,
+        `${t.type === "plus" ? "+" : t.type === "neutral" ? "" : "-"}${t.amount} DH`,
       ]),
       theme: "grid",
       headStyles: {
@@ -282,11 +288,11 @@ const History = () => {
                 </td>
                 <td><Badge bg="primary bg-opacity-10" className="text-primary text-uppercase px-2 py-1">{t.category}</Badge></td>
                 <td className="small text-muted">{t.description}</td>
-                <td className={`text-center fw-bold fs-5 ${t.type === 'plus' ? 'text-success' : 'text-danger'}`}>
-                    {t.type === 'plus' ? '+' : '−'}{t.amount.toLocaleString()} DH
+                <td className={`text-center fw-bold fs-5 ${t.type === 'plus' ? 'text-success' : t.type === 'neutral' ? 'text-warning' : 'text-danger'}`}>
+                    {t.type === 'plus' ? '+' : t.type === 'neutral' ? '' : '−'}{t.amount.toLocaleString()} DH
                 </td>
                 <td className="text-center">
-                    {t.type === 'plus' ? <ArrowUpRight className="text-success" /> : <ArrowDownLeft className="text-danger" />}
+                    {t.type === 'plus' ? <ArrowUpRight className="text-success" /> : t.type === 'neutral' ? <AlertTriangle className="text-warning" /> : <ArrowDownLeft className="text-danger" />}
                 </td>
                 <td className="text-end pe-4">
                     <div className="d-flex justify-content-end gap-1">

@@ -36,7 +36,7 @@ exports.getMonthlyReport = async (req, res) => {
     const workers = await User.find({ role: 'worker' });
     const report = await Promise.all(workers.map(async (worker) => {
       // 1. Check if a payroll record already exists (Already Paid)
-      const paidRecord = await Payroll.findOne({ workerId: worker._id, month, year });
+      const paidRecord = await Payroll.findOne({ workerId: worker._id, month: Number(month), year: Number(year) });
 
       if (paidRecord) {
         const exactBrut = paidRecord.brut !== undefined ? paidRecord.brut : (paidRecord.netAmount + paidRecord.advances);
@@ -78,7 +78,7 @@ exports.getSingleWorkerStats = async (req, res) => {
   const { start, end } = getCycleRange(year, month);
 
   try {
-    const paidRecord = await Payroll.findOne({ workerId, month, year });
+    const paidRecord = await Payroll.findOne({ workerId, month: Number(month), year: Number(year) });
     
     if (paidRecord) {
       const exactBrut = paidRecord.brut !== undefined ? paidRecord.brut : (paidRecord.netAmount + paidRecord.advances);
@@ -109,7 +109,20 @@ exports.getSingleWorkerStats = async (req, res) => {
 exports.confirmPayment = async (req, res) => {
   const { workerId, month, year, netAmount, brut, advances, workerName } = req.body;
 
+  if (!workerId || !month || !year) {
+    return res.status(400).json({ message: "Champs obligatoires manquants (workerId, month, year)." });
+  }
+
+  const numericMonth = Number(month);
+  const numericYear = Number(year);
+
   try {
+    // A. Guard against duplicate payments
+    const existingPayroll = await Payroll.findOne({ workerId, month: numericMonth, year: numericYear });
+    if (existingPayroll) {
+      return res.status(400).json({ message: "Le salaire pour ce mois a déjà été validé et payé." });
+    }
+
     // 1. Mark all current UNSETTLED advances as settled (Because we are processing them now)
     await Transaction.updateMany(
       { workerId: workerId, category: 'Avance', isSettled: false },
@@ -122,23 +135,25 @@ exports.confirmPayment = async (req, res) => {
 
       // A. Create a NEW advance transaction for the worker (This will show up in the next month)
       const reportTransaction = new Transaction({
-        type: 'minus',
+        type: 'neutral',
         category: 'Avance',
         amount: carriedDebt,
         workerId: workerId,
         isSettled: false, // <── Important: This stays open for next month
-        description: `Report de dette - ${workerName} (Solde négatif mois ${month}/${year})`
+        description: `Report de dette - ${workerName} (Solde négatif mois ${numericMonth}/${numericYear})`
       });
       await reportTransaction.save();
 
       // B. Save the Payroll record for THIS month with 0 DH paid
       const payroll = new Payroll({
-        workerId, month, year,
+        workerId,
+        month: numericMonth,
+        year: numericYear,
         totalDays: req.body.totalDays,
         totalBonus: req.body.totalBonus,
-        brut: brut, // <── Save exactly what the brut was
-        advances: advances, // Records the full advance processed
-        netAmount: 0 // <── Manager gave 0 DH cash
+        brut: brut,
+        advances: advances,
+        netAmount: 0
       });
       await payroll.save();
 
@@ -147,8 +162,14 @@ exports.confirmPayment = async (req, res) => {
     } else {
       // ── CASE: POSITIVE BALANCE (NORMAL PAY) ──
       const payroll = new Payroll({
-        ...req.body,
-        brut: brut // Explicitly ensure brut is saved
+        workerId,
+        month: numericMonth,
+        year: numericYear,
+        totalDays: req.body.totalDays,
+        totalBonus: req.body.totalBonus,
+        brut: brut,
+        advances: advances,
+        netAmount: netAmount
       });
       await payroll.save();
 
@@ -159,7 +180,8 @@ exports.confirmPayment = async (req, res) => {
         amount: netAmount,
         workerId: workerId,
         isSettled: true,
-        description: `Paiement Salaire ${month}/${year} - ${workerName}`
+        description: `Paiement Salaire ${numericMonth}/${numericYear} - ${workerName}`,
+        date: new Date()
       });
       await payout.save();
 

@@ -30,7 +30,10 @@ exports.getTransactions = async (req, res) => {
     }
 
     if (search && search !== '') {
-      query.description = { $regex: search, $options: 'i' };
+      query.$or = [
+        { description: { $regex: search, $options: 'i' } },
+        { $expr: { $regexMatch: { input: { $toString: "$amount" }, regex: search, options: "i" } } }
+      ];
     }
 
     if (year && year !== 'all') {

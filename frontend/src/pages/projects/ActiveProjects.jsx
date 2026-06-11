@@ -149,9 +149,9 @@ const ActiveProjects = () => {
                     </div>
                   </div>
 
-                  <h4 className="jakan-title mb-1 text-truncate">{project.projectName}</h4>
+                  <h4 className="jakan-title mb-1 text-truncate">{project.client?.name || 'Client Inconnu'}</h4>
                   <div className="text-muted small d-flex align-items-center mb-4">
-                    <User size={14} className="me-2 text-jakan"/> {project.client?.name || 'Client Inconnu'}
+                    <span className="me-2 fw-bold">Chantier:</span> {project.projectName}
                   </div>
 
                   {/* Financial Mini Bar */}

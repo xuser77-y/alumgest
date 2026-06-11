@@ -20,6 +20,23 @@ const dateRange = (year, month = null) => {
   };
 };
 
+const combineSalaryAndAvance = (categories) => {
+  let salaryAndAvanceSum = 0;
+  const filtered = [];
+  categories.forEach(c => {
+    const nameLower = c._id ? c._id.toLowerCase() : '';
+    if (nameLower === 'salaire' || nameLower === 'avance' || nameLower === 'acomptes' || nameLower === 'acompte' || nameLower === 'salaires' || nameLower === 'avances') {
+      salaryAndAvanceSum += c.amount;
+    } else {
+      filtered.push(c);
+    }
+  });
+  if (salaryAndAvanceSum > 0) {
+    filtered.push({ _id: 'Salaire et Avance', amount: salaryAndAvanceSum });
+  }
+  return filtered.sort((a, b) => b.amount - a.amount);
+};
+
 /* ═══════════════════════════════════════════════════════
    0. GET /api/analytics/years
    Returns distinct years that have Transaction data + project years
@@ -82,11 +99,11 @@ exports.getOverview = async (req, res) => {
     });
     const bestMonth = monthly.reduce((b, m) => m.marge > b.marge ? m : b, monthly[0]);
 
-    const catSpend = await Transaction.aggregate([
+    let catSpend = await Transaction.aggregate([
       { $match: { type: 'minus', date: dateRange(year) } },
       { $group: { _id: '$category', amount: { $sum: '$amount' } } },
-      { $sort:  { amount: -1 } },
     ]);
+    catSpend = combineSalaryAndAvance(catSpend);
     const catIncome = await Transaction.aggregate([
       { $match: { type: 'plus', date: dateRange(year) } },
       { $group: { _id: '$category', amount: { $sum: '$amount' } } },
@@ -149,11 +166,11 @@ exports.getMonthly = async (req, res) => {
     let cumul = 0;
     const cumulData = monthly.map(m => { cumul += m.revenus; return { ...m, cumul }; });
 
-    const catSpend = await Transaction.aggregate([
+    let catSpend = await Transaction.aggregate([
       { $match: { type: 'minus', date: dateRange(year) } },
       { $group: { _id: '$category', amount: { $sum: '$amount' } } },
-      { $sort:  { amount: -1 } },
     ]);
+    catSpend = combineSalaryAndAvance(catSpend);
     const catIncome = await Transaction.aggregate([
       { $match: { type: 'plus', date: dateRange(year) } },
       { $group: { _id: '$category', amount: { $sum: '$amount' } } },
@@ -353,7 +370,11 @@ exports.getDashboardStats = async (req, res) => {
     /* ── 6. Category spending breakdown (top 5) ── */
     const catMap = {};
     transactions.filter(t => t.type === 'minus').forEach(t => {
-      catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+      const catLower = t.category ? t.category.toLowerCase() : '';
+      const targetCat = (catLower === 'salaire' || catLower === 'avance' || catLower === 'acomptes' || catLower === 'acompte' || catLower === 'salaires' || catLower === 'avances')
+        ? 'Salaire et Avance'
+        : t.category;
+      catMap[targetCat] = (catMap[targetCat] || 0) + t.amount;
     });
     const categorySpending = Object.entries(catMap)
       .map(([name, amount]) => ({ name, amount }))

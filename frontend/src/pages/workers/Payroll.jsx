@@ -11,6 +11,7 @@ const Payroll = () => {
   const [showPayModal, setShowPayModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', variant: 'success' });
+  const [isPaying, setIsPaying] = useState(false);
   const [date, setDate] = useState(() => {
     const saved = localStorage.getItem('payroll_view_date');
     return saved ? JSON.parse(saved) : { 
@@ -33,6 +34,7 @@ const Payroll = () => {
   }, [date]);
 
   const handlePayment = async () => {
+    setIsPaying(true);
     try {
       const totalDaysCalculated = selectedWorker.stats.full + (selectedWorker.stats.half * 0.5);
       
@@ -51,7 +53,15 @@ const Payroll = () => {
       fetchData();
       setToast({ show: true, message: 'Paiement validé avec succès !', variant: 'success' });
     } catch (err) { 
-      setToast({ show: true, message: 'Erreur lors du paiement', variant: 'danger' });
+      console.error(err);
+      setToast({ 
+        show: true, 
+        message: err.response?.data?.message || 'Erreur lors du paiement', 
+        bg: 'danger', 
+        variant: 'danger' 
+      });
+    } finally {
+      setIsPaying(false);
     }
   };
 
@@ -119,7 +129,8 @@ const Payroll = () => {
                 <td className="text-center">
                     <Badge bg="success" className="me-1">{row.stats.full}P</Badge>
                     <Badge bg="warning" className="text-dark me-1">{row.stats.half}D</Badge>
-                    <Badge bg="danger">{row.stats.bonus}B</Badge>
+                    <Badge bg="danger" className="me-1">{row.stats.bonus}B</Badge>
+                    <Badge bg="primary">{row.stats.bonus}DP</Badge>
                 </td>
                 <td className="text-center fw-bold">{row.brut} DH</td>
                 <td className="text-center text-danger fw-bold">-{row.advances} DH</td>
@@ -179,10 +190,15 @@ const Payroll = () => {
               </>
           )}
           <div className="d-grid gap-2 mt-4">
-            <Button variant={selectedWorker?.net < 0 ? "danger" : "primary"} className="fw-bold py-2" onClick={handlePayment}>
-                {selectedWorker?.net < 0 ? "OUI, REPORTER" : "OUI, PAYER MAINTENANT"}
+            <Button 
+              variant={selectedWorker?.net < 0 ? "danger" : "primary"} 
+              className="fw-bold py-2" 
+              onClick={handlePayment}
+              disabled={isPaying}
+            >
+              {isPaying ? "EN COURS..." : (selectedWorker?.net < 0 ? "OUI, REPORTER" : "OUI, PAYER MAINTENANT")}
             </Button>
-            <Button variant="light" className="small" onClick={() => setShowPayModal(false)}>Annuler</Button>
+            <Button variant="light" className="small" onClick={() => setShowPayModal(false)} disabled={isPaying}>Annuler</Button>
           </div>
         </Modal.Body>
       </Modal>
